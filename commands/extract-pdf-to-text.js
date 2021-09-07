@@ -35,6 +35,7 @@ async function setup(origin, destination, method = 'shell') {
     }
     const extractor = await extractors[method](destination)
     const write = async item => {
+        if (item.text.trim() === '') return true // don't write empty files
         await FSExtra.writeFile(`${destination}/${item.filename}`, item.text)
         return true
     }

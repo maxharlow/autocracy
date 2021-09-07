@@ -23,7 +23,13 @@ async function setup(origin, destination, method = 'shell') {
         const exists = await FSExtra.pathExists(path)
         if (exists) return
         await FSExtra.mkdir(path)
-        await converter.run(item)
+        try {
+            await converter.run(item)
+        }
+        catch (e) {
+            console.error(`Error: ${e.message} (retrying...)`)
+            return convert(item)
+        }
         return true
     }
     const source = () => Scramjet.DataStream.from(Globby.globbyStream('*', { cwd: origin, deep: 1 })).map(filename => {

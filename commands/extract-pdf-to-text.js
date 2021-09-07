@@ -42,9 +42,15 @@ async function setup(origin, destination, method = 'shell') {
         const path = `${destination}/${item.filename}`
         const exists = await FSExtra.pathExists(path)
         if (exists) return
-        const result = await extractor.run(item)
-        const text = result.replace(/\s+/g, ' ')
-        return { ...item, text }
+        try {
+            const result = await extractor.run(item)
+            const text = result.replace(/\s+/g, ' ')
+            return { ...item, text }
+        }
+        catch (e) {
+            console.error(`Error: ${e.message} (retrying...)`)
+            return extract(item)
+        }
     }
     const source = () => Scramjet.DataStream.from(Globby.globbyStream('*', { cwd: origin, deep: 1 })).map(filename => {
         return {

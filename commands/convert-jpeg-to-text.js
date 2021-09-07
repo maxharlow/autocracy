@@ -53,15 +53,9 @@ function converterAWS() {
                 Bytes: await FSExtra.readFile(filepath)
             }
         }
-        try {
-            const response = await textract.detectDocumentText(params).promise()
-            const text = response.Blocks.filter(block => block.BlockType == 'LINE').map(block => block.Text).join(' ')
-            return text
-        }
-        catch (e) {
-            console.error(`Error: ${e.message} (retrying...)`)
-            return run(filepath)
-        }
+        const response = await textract.detectDocumentText(params).promise()
+        const text = response.Blocks.filter(block => block.BlockType == 'LINE').map(block => block.Text).join(' ')
+        return text
     }
     return {
         run,
@@ -82,9 +76,15 @@ async function setup(origin, destination, method = 'shell') {
         return true
     }
     const convert = async item => {
-        const result = await converter.run(item.filepath)
-        const text = result.replace(/\s+/g, ' ')
-        return { ...item, text }
+        try {
+            const result = await converter.run(item.filepath)
+            const text = result.replace(/\s+/g, ' ')
+            return { ...item, text }
+        }
+        catch (e) {
+            console.error(`Error: ${e.message} (retrying...)`)
+            return convert(item)
+        }
     }
     const source = () => Scramjet.DataStream.from(Globby.globbyStream('**', { cwd: origin, deep: 2 })).map(filename => {
         return {

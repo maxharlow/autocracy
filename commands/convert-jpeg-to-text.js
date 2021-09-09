@@ -10,7 +10,7 @@ import AWS from 'aws-sdk'
 function converterShell() {
     const execute = Util.promisify(ChildProcess.exec)
     const run = async filepath => {
-        const result = await execute(`tesseract -l eng --dpi 300 --psm 11 ${filepath} -`)
+        const result = await execute(`OMP_THREAD_LIMIT=1 tesseract -l eng --dpi 300 --psm 11 ${filepath} -`)
         return result.stdout
     }
     return {

@@ -21,7 +21,7 @@ async function setup(origin, destination, method = 'shell') {
     const convert = async item => {
         const path = `${destination}/${item.filename}`
         const exists = await FSExtra.pathExists(path)
-        if (exists) return
+        if (exists) return true
         await FSExtra.mkdir(path)
         try {
             await converter.run(item)

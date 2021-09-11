@@ -15,7 +15,7 @@ async function initialise(origin, destination, method = 'shell', density = 300, 
         const executable = isInstalledLegacy ? 'convert' : 'magick convert'
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `${executable} -density ${density} pdf:${item.filepath} ${destination}/${item.filename}/page-%04d.jpeg`
+            const command = `${executable} -density ${density} pdf:${origin}/${item.root} ${destination}/${item.root}/page-%04d.jpeg`
             if (verbose) alert(command)
             await execute(command)
         }
@@ -38,24 +38,20 @@ async function initialise(origin, destination, method = 'shell', density = 300, 
         }
         const converter = await converters[method](destination)
         const convert = async item => {
-            const path = `${destination}/${item.filename}`
-            const exists = await FSExtra.pathExists(path)
+            const exists = await FSExtra.pathExists(`${destination}/${item.root}`)
             if (exists) return true
-            await FSExtra.mkdir(path)
+            await FSExtra.mkdir(`${destination}/${item.root}`)
             try {
                 await converter.run(item)
+                return true
             }
             catch (e) {
                 console.error(`Error: ${e.message} (retrying...)`)
                 return convert(item)
             }
-            return true
         }
-        const source = () => Scramjet.DataStream.from(Globby.globbyStream('*', { cwd: origin, deep: 1 })).map(filename => {
-            return {
-                filename,
-                filepath: `${origin}/${filename}`
-            }
+        const source = () => Scramjet.DataStream.from(Globby.globbyStream('*', { cwd: origin, deep: 1 })).map(root => {
+            return { root }
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().map(convert)

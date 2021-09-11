@@ -13,7 +13,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         if (!isInstalled) throw new Error('Poppler not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `pdftotext ${item.filepath} -`
+            const command = `pdftotext ${origin}/${item.root} -`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout
@@ -27,7 +27,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
             const result = await new Promise((resolve, reject) => {
                 parser.on('pdfParser_dataError', reject)
                 parser.on('pdfParser_dataReady', () => resolve(parser.getRawTextContent()))
-                parser.loadPDF(item.filepath)
+                parser.loadPDF(`${origin}/${item.root}`)
             })
             return result
         }
@@ -43,11 +43,11 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         const extractor = await extractors[method](destination)
         const write = async item => {
             if (item.text.trim() === '') return true // don't write empty files
-            await FSExtra.writeFile(`${destination}/${item.filename}`, item.text)
+            await FSExtra.writeFile(`${destination}/${item.root}`, item.text)
             return true
         }
         const extract = async item => {
-            const path = `${destination}/${item.filename}`
+            const path = `${destination}/${item.root}`
             const exists = await FSExtra.pathExists(path)
             if (exists) return
             try {
@@ -60,11 +60,8 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
                 return extract(item)
             }
         }
-        const source = () => Scramjet.DataStream.from(Globby.globbyStream('*', { cwd: origin, deep: 1 })).map(filename => {
-            return {
-                filename,
-                filepath: `${origin}/${filename}`
-            }
+        const source = () => Scramjet.DataStream.from(Globby.globbyStream('*', { cwd: origin, deep: 1 })).map(root => {
+            return { root }
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().setOptions({ maxParallel: 1 }).map(extract).each(write)

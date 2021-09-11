@@ -27,24 +27,7 @@ async function setup() {
         .option('V', { alias: 'verbose', type: 'boolean', describe: 'Print details', default: false })
         .help('?').alias('?', 'help')
         .version().alias('v', 'version')
-    instructions.command('convert-pdf-to-jpeg', 'Convert a directory of PDF files into JPEG images, split by page', args => {
-        args
-            .usage('Usage: ocracy convert-pdf-to-jpeg <origin> <destination>')
-            .demandCommand(2, '')
-            .positional('origin', { type: 'string', describe: 'Origin directory' })
-            .positional('destination', { type: 'string', describe: 'Destination directory' })
-            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
-            .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
-    })
-    instructions.command('convert-jpeg-to-text', 'Convert a directory of directories containing JPEG files for each page into text files including all pages', args => {
-        args
-            .usage('Usage: ocracy convert-jpeg-to-text <origin> <destination>')
-            .demandCommand(2, '')
-            .positional('origin', { type: 'string', describe: 'Origin directory' })
-            .positional('destination', { type: 'string', describe: 'Destination directory' })
-            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['aws', 'library', 'shell'], default: 'shell' })
-    })
-    instructions.command('extract-pdf-to-text', 'Extract the tagged-text from a directory of PDF files', args => {
+    instructions.command('extract-pdf-to-text', 'Extract a directory of PDF files into text files (all pages)', args => {
         args
             .usage('Usage: ocracy extract-pdf-to-text <origin> <destination>')
             .demandCommand(2, '')
@@ -52,34 +35,34 @@ async function setup() {
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
     })
+    instructions.command('convert-pdf-to-jpeg-pages', 'Convert a directory of PDF files into JPEG images per-page', args => {
+        args
+            .usage('Usage: ocracy convert-pdf-to-jpeg-pages <origin> <destination>')
+            .demandCommand(2, '')
+            .positional('origin', { type: 'string', describe: 'Origin directory' })
+            .positional('destination', { type: 'string', describe: 'Destination directory' })
+            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
+            .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
+    })
+    instructions.command('convert-jpeg-pages-to-text-pages', 'Convert a directory of directories of JPEG files per-page into equivalent text files per-page', args => {
+        args
+            .usage('Usage: ocracy convert-jpeg-pages-to-text-pages <origin> <destination>')
+            .demandCommand(2, '')
+            .positional('origin', { type: 'string', describe: 'Origin directory' })
+            .positional('destination', { type: 'string', describe: 'Destination directory' })
+            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['aws', 'library', 'shell'], default: 'shell' })
+    })
+    instructions.command('combine-text-pages', 'Combine a directory of directories containing text files per-page', args => {
+        args
+            .usage('Usage: ocracy combine-text-pages <origin> <destination>')
+            .demandCommand(2, '')
+            .positional('origin', { type: 'string', describe: 'Origin directory' })
+            .positional('destination', { type: 'string', describe: 'Destination directory' })
+    })
     if (instructions.argv._.length === 0) instructions.showHelp().exit(0)
     const command = instructions.argv._[0]
     try {
-        if (command === 'convert-pdf-to-jpeg') {
-            const {
-                _: [, origin, destination],
-                method,
-                density,
-                verbose
-            } = instructions.argv
-            console.error('Starting up...')
-            const process = await ocracy.convertPDFToJPEG(origin, destination, method, density, verbose, alert)
-            const total = await process.length()
-            process.run().each(ticker('Working...', total))
-        }
-        else if (command === 'convert-jpeg-to-text') {
-            const {
-                _: [, origin, destination],
-                method,
-                verbose
-            } = instructions.argv
-            console.error('Starting up...')
-            const process = await ocracy.convertJPEGToText(origin, destination, method, verbose, alert)
-            const total = await process.length()
-            await process.run().each(ticker('Working...', total))
-            await process.terminate()
-        }
-        else if (command === 'extract-pdf-to-text') {
+        if (command === 'extract-pdf-to-text') {
             const {
                 _: [, origin, destination],
                 method,
@@ -87,6 +70,40 @@ async function setup() {
             } = instructions.argv
             console.error('Starting up...')
             const process = await ocracy.extractPDFToText(origin, destination, method, verbose, alert)
+            const total = await process.length()
+            await process.run().each(ticker('Working...', total))
+        }
+        else if (command === 'convert-pdf-to-jpeg-pages') {
+            const {
+                _: [, origin, destination],
+                method,
+                density,
+                verbose
+            } = instructions.argv
+            console.error('Starting up...')
+            const process = await ocracy.convertPDFToJPEGPages(origin, destination, method, density, verbose, alert)
+            const total = await process.length()
+            process.run().each(ticker('Working...', total))
+        }
+        else if (command === 'convert-jpeg-pages-to-text-pages') {
+            const {
+                _: [, origin, destination],
+                method,
+                verbose
+            } = instructions.argv
+            console.error('Starting up...')
+            const process = await ocracy.convertJPEGPagesToTextPages(origin, destination, method, verbose, alert)
+            const total = await process.length()
+            await process.run().each(ticker('Working...', total))
+            await process.terminate()
+        }
+        else if (command === 'combine-text-pages') {
+            const {
+                _: [, origin, destination],
+                verbose
+            } = instructions.argv
+            console.error('Starting up...')
+            const process = await ocracy.combineTextPages(origin, destination, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }

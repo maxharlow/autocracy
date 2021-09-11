@@ -12,7 +12,6 @@
     "dependencies": {
         "@imagemagick/magick-wasm": "0.0.6",
         "aws-sdk": "2.968.x",
-        "better-sqlite3": "7.4.x",
         "fs-extra": "10.0.x",
         "globby": "12.0.x",
         "lookpath": "1.2.x",

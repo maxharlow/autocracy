@@ -14,8 +14,8 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         const isInstalled = await Lookpath.lookpath('tesseract')
         if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
-        const run = async filepath => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l eng --dpi 300 --psm 11 ${filepath} -`
+        const run = async item => {
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l eng --dpi 300 --psm 11 ${origin}/${item.root}/${item.pagefile} -`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout
@@ -42,8 +42,8 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
             scheduler.addWorker(worker)
             return
         })
-        const run = async filepath => {
-            const output = await scheduler.addJob('recognize', filepath)
+        const run = async item => {
+            const output = await scheduler.addJob('recognize', item.filepath)
             return output.data.text
         }
         return {
@@ -54,10 +54,10 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
 
     function converterAWS() {
         const textract = new AWS.Textract({ region: 'eu-west-1' })
-        const run = async filepath => {
+        const run = async item => {
             const params = {
                 Document: {
-                    Bytes: await FSExtra.readFile(filepath)
+                    Bytes: await FSExtra.readFile(item.filepath)
                 }
             }
             const response = await textract.detectDocumentText(params).promise()
@@ -70,6 +70,11 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         }
     }
 
+    async function write(item) {
+        await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'txt')}`, item.text)
+        return true
+    }
+
     async function setup() {
         await FSExtra.ensureDir(destination)
         const converters = {
@@ -78,13 +83,12 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
             shell: converterShell
         }
         const converter = await converters[method]()
-        const write = async item => { // note pages are written out of order
-            await FSExtra.appendFile(`${destination}/${item.provenance}`, item.text)
-            return true
-        }
         const convert = async item => {
+            const exists = await FSExtra.pathExists(`${destination}/${item.root}/${item.pagefile}`)
+            if (exists) return true
+            await FSExtra.ensureDir(`${destination}/${item.root}`)
             try {
-                const result = await converter.run(item.filepath)
+                const result = await converter.run(item)
                 const text = result.replace(/\s+/g, ' ')
                 return { ...item, text }
             }
@@ -93,11 +97,9 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
                 return convert(item)
             }
         }
-        const source = () => Scramjet.DataStream.from(Globby.globbyStream('**', { cwd: origin, deep: 2 })).map(filename => {
-            return {
-                filepath: `${origin}/${filename}`,
-                provenance: filename.split('/')[0]
-            }
+        const source = () => Scramjet.DataStream.from(Globby.globbyStream('**', { cwd: origin, deep: 2 })).map(path => {
+            const [root, pagefile] = path.split('/')
+            return { root, pagefile }
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => {

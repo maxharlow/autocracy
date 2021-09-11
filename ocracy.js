@@ -1,9 +1,11 @@
-import convertPDFToJPEG from './commands/convert-pdf-to-jpeg.js'
-import convertJPEGToText from './commands/convert-jpeg-to-text.js'
 import extractPDFToText from './commands/extract-pdf-to-text.js'
+import convertPDFToJPEGPages from './commands/convert-pdf-to-jpeg-pages.js'
+import convertJPEGPagesToTextPages from './commands/convert-jpeg-pages-to-text-pages.js'
+import combineTextPages from './commands/combine-text-pages.js'
 
 export default {
-    convertPDFToJPEG,
-    convertJPEGToText,
-    extractPDFToText
+    extractPDFToText,
+    convertPDFToJPEGPages,
+    convertJPEGPagesToTextPages,
+    combineTextPages
 }

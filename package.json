@@ -10,6 +10,7 @@
         "url": "https://github.com/maxharlow/ocracy.git"
     },
     "dependencies": {
+        "@imagemagick/magick-wasm": "0.0.6",
         "aws-sdk": "2.968.x",
         "better-sqlite3": "7.4.x",
         "fs-extra": "10.0.x",

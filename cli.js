@@ -24,6 +24,7 @@ async function setup() {
     const instructions = Yargs(Process.argv.slice(2))
         .usage('Usage: ocracy <command>')
         .wrap(null)
+        .option('V', { alias: 'verbose', type: 'boolean', describe: 'Print details', default: false })
         .help('?').alias('?', 'help')
         .version().alias('v', 'version')
     instructions.command('convert-pdf-to-jpeg', 'Convert a directory of PDF files into JPEG images, split by page', args => {
@@ -32,6 +33,7 @@ async function setup() {
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
+            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
     })
     instructions.command('convert-jpeg-to-text', 'Convert a directory of directories containing JPEG files for each page into text files including all pages', args => {
         args
@@ -55,7 +57,6 @@ async function setup() {
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin S3 Bucket path' })
             .positional('jobfile', { type: 'string', describe: 'A jobfile' })
-            .option('V', { alias: 'verbose', type: 'boolean', describe: 'Print details', default: false })
     })
     instructions.command('get-aws-job-status', 'Get the status for every AWS Textract job in a jobfile', args => {
         args
@@ -75,20 +76,23 @@ async function setup() {
     try {
         if (command === 'convert-pdf-to-jpeg') {
             const {
-                _: [, origin, destination]
+                _: [, origin, destination],
+                method,
+                verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.convertPDFToJPEG(origin, destination)
+            const process = await ocracy.convertPDFToJPEG(origin, destination, method, verbose, alert)
             const total = await process.length()
             process.run().each(ticker('Working...', total))
         }
         else if (command === 'convert-jpeg-to-text') {
             const {
                 _: [, origin, destination],
-                method
+                method,
+                verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.convertJPEGToText(origin, destination, method)
+            const process = await ocracy.convertJPEGToText(origin, destination, method, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()
@@ -96,10 +100,11 @@ async function setup() {
         else if (command === 'extract-pdf-to-text') {
             const {
                 _: [, origin, destination],
-                method
+                method,
+                verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.extractPDFToText(origin, destination, method)
+            const process = await ocracy.extractPDFToText(origin, destination, method, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }

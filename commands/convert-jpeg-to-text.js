@@ -3,13 +3,16 @@ import Util from 'util'
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import * as Globby from 'globby'
+import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 import AWS from 'aws-sdk'
 
 async function initialise(origin, destination, method = 'shell', verbose, alert) {
 
-    function converterShell() {
+    async function converterShell() {
+        const isInstalled = await Lookpath.lookpath('tesseract')
+        if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async filepath => {
             const command = `OMP_THREAD_LIMIT=1 tesseract -l eng --dpi 300 --psm 11 ${filepath} -`

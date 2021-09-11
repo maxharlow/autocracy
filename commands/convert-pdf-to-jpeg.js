@@ -2,25 +2,30 @@ import Util from 'util'
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import * as Globby from 'globby'
+import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 // import MagickWasm from '@imagemagick/magick-wasm'
 
-async function initialise(origin, destination, method = 'shell', verbose, alert) {
+async function initialise(origin, destination, method = 'shell', density = 300, verbose, alert) {
+
+    async function converterShell(destination) {
+        const isInstalled = await Lookpath.lookpath('magick')
+        const isInstalledLegacy = await Lookpath.lookpath('convert')
+        if (!isInstalled && !isInstalledLegacy) throw new Error('ImageMagick not found!')
+        const executable = isInstalledLegacy ? 'convert' : 'magick convert'
+        const execute = Util.promisify(ChildProcess.exec)
+        const run = async item => {
+            const command = `${executable} -density ${density} pdf:${item.filepath} ${destination}/${item.filename}/page-%04d.jpeg`
+            if (verbose) alert(command)
+            await execute(command)
+        }
+        return { run }
+    }
 
     async function converterLibrary(destination) {
         // await MagickWasm.initializeImageMagick()
         const run = async item => {
             // todo
-        }
-        return { run }
-    }
-
-    function converterShell(destination) {
-        const execute = Util.promisify(ChildProcess.exec)
-        const run = async item => {
-            const command = `magick convert -density 300 pdf:${item.filepath} ${destination}/${item.filename}/page-%04d.jpeg`
-            if (verbose) alert(command)
-            await execute(command)
         }
         return { run }
     }

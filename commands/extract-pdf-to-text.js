@@ -2,10 +2,24 @@ import Util from 'util'
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import * as Globby from 'globby'
+import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import PDF2JSON from 'pdf2json'
 
 async function initialise(origin, destination, method = 'shell', verbose, alert) {
+
+    async function extractorShell() {
+        const isInstalled = await Lookpath.lookpath('pdftotext')
+        if (!isInstalled) throw new Error('Poppler not found!')
+        const execute = Util.promisify(ChildProcess.exec)
+        const run = async item => {
+            const command = `pdftotext ${item.filepath} -`
+            if (verbose) alert(command)
+            const result = await execute(command)
+            return result.stdout
+        }
+        return { run }
+    }
 
     async function extractorLibrary() {
         const run = async item => {
@@ -16,15 +30,6 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
                 parser.loadPDF(item.filepath)
             })
             return result
-        }
-        return { run }
-    }
-
-    function extractorShell() {
-        const execute = Util.promisify(ChildProcess.exec)
-        const run = async item => {
-            const result = await execute(`pdftotext ${item.filepath} -`)
-            return result.stdout
         }
         return { run }
     }

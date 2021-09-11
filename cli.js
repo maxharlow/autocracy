@@ -34,6 +34,7 @@ async function setup() {
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
+            .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
     })
     instructions.command('convert-jpeg-to-text', 'Convert a directory of directories containing JPEG files for each page into text files including all pages', args => {
         args
@@ -78,10 +79,11 @@ async function setup() {
             const {
                 _: [, origin, destination],
                 method,
+                density,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.convertPDFToJPEG(origin, destination, method, verbose, alert)
+            const process = await ocracy.convertPDFToJPEG(origin, destination, method, density, verbose, alert)
             const total = await process.length()
             process.run().each(ticker('Working...', total))
         }
@@ -139,7 +141,7 @@ async function setup() {
         }
     }
     catch (e) {
-        console.error(e.stack)
+        console.error(instructions.argv.verbose ? e.stack : e.message)
         Process.exit(1)
     }
 

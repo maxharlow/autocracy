@@ -15,6 +15,7 @@
         "better-sqlite3": "7.4.x",
         "fs-extra": "10.0.x",
         "globby": "12.0.x",
+        "lookpath": "1.2.x",
         "pdf2json": "1.2.x",
         "progress": "2.0.x",
         "scramjet": "4.35.x",

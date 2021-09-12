@@ -27,6 +27,13 @@ async function setup() {
         .option('V', { alias: 'verbose', type: 'boolean', describe: 'Print details', default: false })
         .help('?').alias('?', 'help')
         .version().alias('v', 'version')
+    instructions.command('multiprocess', 'Run a full process, attempting extracting tagged-text first before falling back to OCR', args => {
+        args
+            .usage('Usage: ocracy multiprocess <origin> <destination>')
+            .demandCommand(2, '')
+            .positional('origin', { type: 'string', describe: 'Origin directory' })
+            .positional('destination', { type: 'string', describe: 'Destination directory' })
+    })
     instructions.command('extract-pdf-to-text', 'Extract a directory of PDF files into text files (all pages)', args => {
         args
             .usage('Usage: ocracy extract-pdf-to-text <origin> <destination>')
@@ -62,7 +69,22 @@ async function setup() {
     if (instructions.argv._.length === 0) instructions.showHelp().exit(0)
     const command = instructions.argv._[0]
     try {
-        if (command === 'extract-pdf-to-text') {
+        if (command === 'multiprocess') {
+            const {
+                _: [, origin, destination],
+                verbose
+            } = instructions.argv
+            console.error('Starting up...')
+            const procedures = await ocracy.multiprocess(origin, destination, verbose, alert)
+            await procedures.reduce(async (previous, procedure) => {
+                await previous
+                const process = await procedure.setup()
+                const total = await process.length()
+                await process.run().each(ticker(`${procedure.name}...`.padEnd(41, ' '), total)).whenEnd()
+                return
+            }, Promise.resolve())
+        }
+        else if (command === 'extract-pdf-to-text') {
             const {
                 _: [, origin, destination],
                 method,

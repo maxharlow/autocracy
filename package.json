@@ -10,14 +10,14 @@
         "url": "https://github.com/maxharlow/ocracy.git"
     },
     "dependencies": {
-        "@imagemagick/magick-wasm": "0.0.6",
-        "aws-sdk": "2.968.x",
+        "@imagemagick/magick-wasm": "0.0.8",
+        "aws-sdk": "2.987.x",
         "fs-extra": "10.0.x",
         "globby": "12.0.x",
         "lookpath": "1.2.x",
         "pdf2json": "1.2.x",
         "progress": "2.0.x",
-        "scramjet": "4.35.x",
+        "scramjet": "4.36.x",
         "tesseract.js": "2.1.x",
         "yargs": "17.1.x"
     },

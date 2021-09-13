@@ -13,6 +13,8 @@ async function initialise(origin, destination, verbose, alert) {
     }
 
     async function read(item) {
+        const exists = await FSExtra.exists(`${destination}/${item.root}`)
+        if (exists) return null // already exists, skip
         const texts = await Promise.all(item.files.map(file => FSExtra.readFile(file, 'utf8')))
         return {
             root: item.root,
@@ -21,6 +23,7 @@ async function initialise(origin, destination, verbose, alert) {
     }
 
     const write = async item => {
+        if (!item) return true // skipped file
         await FSExtra.writeFile(`${destination}/${item.root}`, item.text)
         return true
     }

@@ -15,7 +15,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l eng --dpi 300 --psm 11 ${origin}/${item.root}/${item.pagefile} -`
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l eng --dpi 300 --psm 11 "${origin}/${item.root}/${item.pagefile}" -`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout

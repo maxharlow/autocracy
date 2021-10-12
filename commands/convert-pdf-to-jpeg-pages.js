@@ -15,7 +15,7 @@ async function initialise(origin, destination, method = 'shell', density = 300, 
         const executable = isInstalledLegacy ? 'convert' : 'magick convert'
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `${executable} -density ${density} pdf:${origin}/${item.root} ${destination}/${item.root}/page-%04d.jpeg`
+            const command = `${executable} -density ${density} "pdf:${origin}/${item.root}" "${destination}/${item.root}/page-%04d.jpeg"`
             if (verbose) alert(command)
             await execute(command)
         }

@@ -13,7 +13,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         if (!isInstalled) throw new Error('Poppler not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `pdftotext ${origin}/${item.root} -`
+            const command = `pdftotext "${origin}/${item.root}" -`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout

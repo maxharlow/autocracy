@@ -12,7 +12,7 @@ async function initialise(origin, destination, method = 'shell', density = 300, 
         const isInstalled = await Lookpath.lookpath('magick')
         const isInstalledLegacy = await Lookpath.lookpath('convert')
         if (!isInstalled && !isInstalledLegacy) throw new Error('ImageMagick not found!')
-        const executable = isInstalledLegacy ? 'convert' : 'magick convert'
+        const executable = !isInstalled ? 'convert' : 'magick convert'
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
             const command = `${executable} -density ${density} "pdf:${origin}/${item.root}" "${destination}/${item.root}/page-%04d.jpeg"`

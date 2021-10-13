@@ -42,6 +42,14 @@ async function setup() {
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
     })
+    instructions.command('symlink-missing', 'Create symlinks to all files from origin not found in intermediate', args => {
+        args
+            .usage('Usage: ocracy extract-pdf-to-text <origin> <intermedidate> <destination>')
+            .demandCommand(3, '')
+            .positional('origin', { type: 'string', describe: 'Origin directory' })
+            .positional('intermediate', { type: 'string', describe: 'Intermediate directory' })
+            .positional('destination', { type: 'string', describe: 'Destination directory' })
+    })
     instructions.command('convert-pdf-to-jpeg-pages', 'Convert a directory of PDF files into JPEG images per-page', args => {
         args
             .usage('Usage: ocracy convert-pdf-to-jpeg-pages <origin> <destination>')
@@ -92,6 +100,16 @@ async function setup() {
             } = instructions.argv
             console.error('Starting up...')
             const process = await ocracy.extractPDFToText(origin, destination, method, verbose, alert)
+            const total = await process.length()
+            await process.run().each(ticker('Working...', total))
+        }
+        else if (command === 'symlink-missing') {
+            const {
+                _: [, origin, intermediate, destination],
+                verbose
+            } = instructions.argv
+            console.error('Starting up...')
+            const process = await ocracy.symlinkMissing(origin, intermediate, destination, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }

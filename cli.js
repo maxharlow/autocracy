@@ -101,7 +101,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.extractPDFToText(origin, destination, method, verbose, alert)
+            const process = await ocracy.operations.extractPDFToText(origin, destination, method, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -111,7 +111,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.symlinkMissing(origin, intermediate, destination, verbose, alert)
+            const process = await ocracy.operations.symlinkMissing(origin, intermediate, destination, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -123,7 +123,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.convertPDFToJPEGPages(origin, destination, method, density, verbose, alert)
+            const process = await ocracy.operations.convertPDFToJPEGPages(origin, destination, method, density, verbose, alert)
             const total = await process.length()
             process.run().each(ticker('Working...', total))
         }
@@ -134,7 +134,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.convertJPEGPagesToTextPages(origin, destination, method, verbose, alert)
+            const process = await ocracy.operations.convertJPEGPagesToTextPages(origin, destination, method, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()
@@ -145,7 +145,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.combineTextPages(origin, destination, verbose, alert)
+            const process = await ocracy.operations.combineTextPages(origin, destination, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }

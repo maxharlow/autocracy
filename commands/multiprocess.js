@@ -1,32 +1,31 @@
 import ocracy from './../ocracy.js'
 
-async function initialise(origin, destination, verbose, forceOCR, alert) {
+async function initialise(origin, destination, forceOCR, verbose, alert) {
 
     async function setup() {
-        const cache = '.ocracy-cache'
-        const cacheUntagged = `${cache}/untagged`
-        const cacheUntaggedImagePages = `${cache}/untagged-image-pages`
-        const cacheUntaggedTextPages = `${cache}/untagged-text-pages`
+        const cacheUntagged = '.ocracy-cache/untagged'
+        const cacheUntaggedImagePages = '.ocracy-cache/untagged-image-pages'
+        const cacheUntaggedTextPages = '.ocracy-cache/untagged-text-pages'
         const sequence = [
             !forceOCR && {
                 name: 'Extracting PDF to text',
-                setup: () => ocracy.extractPDFToText(origin, destination, 'shell', verbose, alert)
+                setup: () => ocracy.operations.extractPDFToText(origin, destination, 'shell', verbose, alert)
             },
             !forceOCR && {
                 name: 'Symlinking untagged PDFs',
-                setup: () => ocracy.symlinkMissing(origin, destination, cacheUntagged, verbose, alert)
+                setup: () => ocracy.operations.symlinkMissing(origin, destination, cacheUntagged, verbose, alert)
             },
             {
                 name: forceOCR ? 'Converting PDFs to JPEG pages' : 'Converting untagged PDFs to JPEG pages',
-                setup: () => ocracy.convertPDFToJPEGPages(forceOCR ? origin : cacheUntagged, cacheUntaggedImagePages, 'shell', 300, verbose, alert)
+                setup: () => ocracy.operations.convertPDFToJPEGPages(forceOCR ? origin : cacheUntagged, cacheUntaggedImagePages, 'shell', 300, verbose, alert)
             },
             {
                 name: 'Converting JPEG pages to text pages',
-                setup: () => ocracy.convertJPEGPagesToTextPages(cacheUntaggedImagePages, cacheUntaggedTextPages, 'shell', verbose, alert)
+                setup: () => ocracy.operations.convertJPEGPagesToTextPages(cacheUntaggedImagePages, cacheUntaggedTextPages, 'shell', verbose, alert)
             },
             {
                 name: 'Combining text pages',
-                setup: () => ocracy.combineTextPages(cacheUntaggedTextPages, destination, verbose, alert)
+                setup: () => ocracy.operations.combineTextPages(cacheUntaggedTextPages, destination, verbose, alert)
             }
         ]
         return sequence.filter(x => x)

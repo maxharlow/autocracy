@@ -115,11 +115,11 @@ async function setup() {
         if (command === 'get-text') {
             const {
                 _: [, origin, destination],
-                forceOCR,
+                forceOcr,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = await ocracy.getText(origin, destination, forceOCR, verbose, alert)
+            const procedures = await ocracy.getText(origin, destination, forceOcr, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()
@@ -131,11 +131,11 @@ async function setup() {
         else if (command === 'make-searchable') {
             const {
                 _: [, origin, destination],
-                forceOCR,
+                forceOcr,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = await ocracy.makeSearchable(origin, destination, forceOCR, verbose, alert)
+            const procedures = await ocracy.makeSearchable(origin, destination, forceOcr, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()

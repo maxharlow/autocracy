@@ -6,7 +6,7 @@ import * as Globby from 'globby'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
-import AWS from 'aws-sdk'
+import * as AWSTextract from '@aws-sdk/client-textract'
 
 async function initialise(origin, destination, method = 'shell', language = 'eng', verbose, alert) {
 
@@ -43,7 +43,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
             return
         })
         const run = async item => {
-            const output = await scheduler.addJob('recognize', item.filepath)
+            const output = await scheduler.addJob('recognize', `${origin}/${item.root}/${item.pagefile}`)
             return output.data.text
         }
         return {
@@ -52,15 +52,15 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
         }
     }
 
-    function converterAWS() {
-        const textract = new AWS.Textract({ region: 'eu-west-1' })
+    function converterAWSTextract() {
+        const textract = new AWSTextract.TextractClient({ region: 'eu-west-1' })
         const run = async item => {
-            const params = { // does aws auto-guess language or does it have to be specified here?
+            const detect = new AWSTextract.DetectDocumentTextCommand({
                 Document: {
-                    Bytes: await FSExtra.readFile(item.filepath)
+                    Bytes: await FSExtra.readFile(`${origin}/${item.root}/${item.pagefile}`)
                 }
-            }
-            const response = await textract.detectDocumentText(params).promise()
+            })
+            const response = await textract.send(detect)
             const text = response.Blocks.filter(block => block.BlockType == 'LINE').map(block => block.Text).join(' ')
             return text
         }
@@ -78,7 +78,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
     async function setup() {
         await FSExtra.ensureDir(destination)
         const converters = {
-            aws: converterAWS,
+            'aws-textract': converterAWSTextract,
             library: converterLibrary,
             shell: converterShell
         }

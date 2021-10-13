@@ -10,8 +10,8 @@
         "url": "https://github.com/maxharlow/ocracy.git"
     },
     "dependencies": {
+        "@aws-sdk/client-textract": "3.36.x",
         "@imagemagick/magick-wasm": "0.0.8",
-        "aws-sdk": "2.987.x",
         "fs-extra": "10.0.x",
         "globby": "12.0.x",
         "lookpath": "1.2.x",

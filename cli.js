@@ -67,6 +67,7 @@ async function setup() {
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['aws', 'library', 'shell'], default: 'shell' })
+            .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find (not used by AWS)', default: 'eng' })
     })
     instructions.command('combine-text-pages', false, args => {
         args
@@ -131,10 +132,11 @@ async function setup() {
             const {
                 _: [, origin, destination],
                 method,
+                language,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.convertJPEGPagesToTextPages(origin, destination, method, verbose, alert)
+            const process = await ocracy.operations.convertJPEGPagesToTextPages(origin, destination, method, language, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()

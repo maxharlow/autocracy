@@ -8,14 +8,14 @@ import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 import AWS from 'aws-sdk'
 
-async function initialise(origin, destination, method = 'shell', verbose, alert) {
+async function initialise(origin, destination, method = 'shell', language = 'eng', verbose, alert) {
 
     async function converterShell() {
         const isInstalled = await Lookpath.lookpath('tesseract')
         if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l eng --dpi 300 --psm 11 "${origin}/${item.root}/${item.pagefile}" -`
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${language} --dpi 300 --psm 11 "${origin}/${item.root}/${item.pagefile}" -`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout
@@ -33,8 +33,8 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
             await previous
             const worker = Tesseract.createWorker()
             await worker.load()
-            await worker.loadLanguage('eng')
-            await worker.initialize('eng')
+            await worker.loadLanguage(language)
+            await worker.initialize(language)
             await worker.setParameters({
                 user_defined_dpi: 300,
                 tessedit_pageseg_mode: Tesseract.PSM.PSM_SPARSE_TEXT
@@ -55,7 +55,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
     function converterAWS() {
         const textract = new AWS.Textract({ region: 'eu-west-1' })
         const run = async item => {
-            const params = {
+            const params = { // does aws auto-guess language or does it have to be specified here?
                 Document: {
                     Bytes: await FSExtra.readFile(item.filepath)
                 }

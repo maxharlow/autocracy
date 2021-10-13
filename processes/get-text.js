@@ -21,7 +21,7 @@ async function initialise(origin, destination, forceOCR, verbose, alert) {
             },
             {
                 name: 'Converting JPEG pages to text pages',
-                setup: () => ocracy.operations.convertJPEGPagesToTextPages(cacheUntaggedImagePages, cacheUntaggedTextPages, 'shell', verbose, alert)
+                setup: () => ocracy.operations.convertJPEGPagesToTextPages(cacheUntaggedImagePages, cacheUntaggedTextPages, 'shell', 'eng', verbose, alert)
             },
             {
                 name: 'Combining text pages',

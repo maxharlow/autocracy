@@ -91,8 +91,8 @@ async function setup() {
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
-            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['aws', 'library', 'shell'], default: 'shell' })
-            .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find (not used by AWS)', default: 'eng' })
+            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
+            .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find', default: 'eng' })
     })
     instructions.command('combine-text-pages', false, args => {
         args

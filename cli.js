@@ -33,6 +33,7 @@ async function setup() {
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
+            .option('f', { alias: 'force-ocr', type: 'boolean', describe: 'Do not use tagged-text even if it is available', default: false })
     })
     instructions.command('extract-pdf-to-text', 'Extract a directory of PDF files into text files (all pages)', args => {
         args
@@ -80,10 +81,11 @@ async function setup() {
         if (command === 'multiprocess') {
             const {
                 _: [, origin, destination],
+                forceOCR,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = await ocracy.multiprocess(origin, destination, verbose, alert)
+            const procedures = await ocracy.multiprocess(origin, destination, forceOCR, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()

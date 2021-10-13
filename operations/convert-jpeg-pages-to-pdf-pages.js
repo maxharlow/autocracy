@@ -44,6 +44,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
             }
             catch (e) {
                 console.error(`Error: ${e.message} (retrying...)`)
+                if (verbose) console.error(e.stack)
                 return convert(item)
             }
         }

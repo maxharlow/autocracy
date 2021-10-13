@@ -57,6 +57,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
             }
             catch (e) {
                 console.error(`Error: ${e.message} (retrying...)`)
+                if (verbose) console.error(e.stack)
                 return extract(item)
             }
         }

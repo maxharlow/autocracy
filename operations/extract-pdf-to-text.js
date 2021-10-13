@@ -4,7 +4,7 @@ import Scramjet from 'scramjet'
 import * as Globby from 'globby'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
-import PDF2JSON from 'pdf2json'
+import PDF2Json from 'pdf2json'
 
 async function initialise(origin, destination, method = 'shell', verbose, alert) {
 
@@ -23,7 +23,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
 
     async function extractorLibrary() {
         const run = async item => {
-            const parser = new PDF2JSON(null, true)
+            const parser = new PDF2Json(null, true)
             const result = await new Promise((resolve, reject) => {
                 parser.on('pdfParser_dataError', reject)
                 parser.on('pdfParser_dataReady', () => resolve(parser.getRawTextContent()))

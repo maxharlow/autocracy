@@ -14,7 +14,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
         const run = async item => {
             const command = `OMP_THREAD_LIMIT=1 tesseract -l ${language} --dpi 300 --psm 11 "${origin}/${item.root}/${item.pagefile}" - pdf`
             if (verbose) alert(command)
-            const result = await execute(command, { encoding: 'binary', maxBuffer: 2 * 1024 * 1024 }) // 2MB
+            const result = await execute(command, { encoding: 'binary', maxBuffer: 2 * 1024 * 1024 * 1024 }) // 2GB
             return Buffer.from(result.stdout, 'binary')
         }
         return {

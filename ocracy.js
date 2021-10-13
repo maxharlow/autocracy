@@ -1,4 +1,4 @@
-import multiprocess from './commands/multiprocess.js'
+import getText from './processes/get-text.js'
 import extractPDFToText from './operations/extract-pdf-to-text.js'
 import symlinkMissing from './operations/symlink-missing.js'
 import convertPDFToJPEGPages from './operations/convert-pdf-to-jpeg-pages.js'
@@ -6,7 +6,7 @@ import convertJPEGPagesToTextPages from './operations/convert-jpeg-pages-to-text
 import combineTextPages from './operations/combine-text-pages.js'
 
 export default {
-    multiprocess,
+    getText,
     operations: {
         extractPDFToText,
         symlinkMissing,

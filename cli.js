@@ -27,15 +27,15 @@ async function setup() {
         .option('V', { alias: 'verbose', type: 'boolean', describe: 'Print details', default: false })
         .help('?').alias('?', 'help')
         .version().alias('v', 'version')
-    instructions.command('multiprocess', 'Run a full process, attempting extracting tagged-text first before falling back to OCR', args => {
+    instructions.command('get-text', 'Extract or, if necessary, OCR each PDF, and output a text file', args => {
         args
-            .usage('Usage: ocracy multiprocess <origin> <destination>')
+            .usage('Usage: ocracy get-text <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('f', { alias: 'force-ocr', type: 'boolean', describe: 'Do not use tagged-text even if it is available', default: false })
     })
-    instructions.command('extract-pdf-to-text', 'Extract a directory of PDF files into text files (all pages)', args => {
+    instructions.command('extract-pdf-to-text', false, args => {
         args
             .usage('Usage: ocracy extract-pdf-to-text <origin> <destination>')
             .demandCommand(2, '')
@@ -43,7 +43,7 @@ async function setup() {
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
     })
-    instructions.command('symlink-missing', 'Create symlinks to all files from origin not found in intermediate', args => {
+    instructions.command('symlink-missing', false, args => {
         args
             .usage('Usage: ocracy extract-pdf-to-text <origin> <intermedidate> <destination>')
             .demandCommand(3, '')
@@ -51,7 +51,7 @@ async function setup() {
             .positional('intermediate', { type: 'string', describe: 'Intermediate directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
     })
-    instructions.command('convert-pdf-to-jpeg-pages', 'Convert a directory of PDF files into JPEG images per-page', args => {
+    instructions.command('convert-pdf-to-jpeg-pages', false, args => {
         args
             .usage('Usage: ocracy convert-pdf-to-jpeg-pages <origin> <destination>')
             .demandCommand(2, '')
@@ -60,7 +60,7 @@ async function setup() {
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
             .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
     })
-    instructions.command('convert-jpeg-pages-to-text-pages', 'Convert a directory of directories of JPEG files per-page into equivalent text files per-page', args => {
+    instructions.command('convert-jpeg-pages-to-text-pages', false, args => {
         args
             .usage('Usage: ocracy convert-jpeg-pages-to-text-pages <origin> <destination>')
             .demandCommand(2, '')
@@ -68,7 +68,7 @@ async function setup() {
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['aws', 'library', 'shell'], default: 'shell' })
     })
-    instructions.command('combine-text-pages', 'Combine a directory of directories containing text files per-page', args => {
+    instructions.command('combine-text-pages', false, args => {
         args
             .usage('Usage: ocracy combine-text-pages <origin> <destination>')
             .demandCommand(2, '')
@@ -78,14 +78,14 @@ async function setup() {
     if (instructions.argv._.length === 0) instructions.showHelp().exit(0)
     const command = instructions.argv._[0]
     try {
-        if (command === 'multiprocess') {
+        if (command === 'get-text') {
             const {
                 _: [, origin, destination],
                 forceOCR,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = await ocracy.multiprocess(origin, destination, forceOCR, verbose, alert)
+            const procedures = await ocracy.getText(origin, destination, forceOCR, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()

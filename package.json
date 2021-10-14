@@ -18,6 +18,7 @@
         "pdf2json": "1.2.x",
         "progress": "2.0.x",
         "scramjet": "4.36.x",
+        "tempy": "2.0.x",
         "tesseract.js": "2.1.x",
         "yargs": "17.2.x"
     },

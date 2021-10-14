@@ -3,6 +3,7 @@ import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import * as Globby from 'globby'
 import Lookpath from 'lookpath'
+import Tempy from 'tempy'
 import ChildProcess from 'child_process'
 
 async function initialise(origin, destination, method = 'shell', verbose, alert) {
@@ -14,10 +15,13 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         const run = async item => {
             const pages = await Globby.globby(`${origin}/${item.root}`)
             const pagesList = pages.map(page => `"${page}"`).join(' ')
-            const command = `pdfunite ${pagesList} /dev/stdout`
+            const output = Tempy.file()
+            const command = `pdfunite ${pagesList} ${output}`
             if (verbose) alert(command)
-            const result = await execute(command, { encoding: 'binary', maxBuffer: 4 * 1024 * 1024 * 1024 }) // 4GB
-            return Buffer.from(result.stdout, 'binary')
+            await execute(command)
+            const result = await FSExtra.readFile(output)
+            await FSExtra.remove(output)
+            return result
         }
         return { run }
     }

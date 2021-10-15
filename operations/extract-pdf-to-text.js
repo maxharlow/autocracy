@@ -34,6 +34,12 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         return { run }
     }
 
+    async function write(item) {
+        if (item.text.trim() === '') return true // don't write empty files
+        await FSExtra.writeFile(`${destination}/${item.root}`, item.text)
+        return true
+    }
+
     async function setup() {
         await FSExtra.ensureDir(destination)
         const extractors = {
@@ -41,11 +47,6 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
             library: extractorLibrary
         }
         const extractor = await extractors[method](destination)
-        const write = async item => {
-            if (item.text.trim() === '') return true // don't write empty files
-            await FSExtra.writeFile(`${destination}/${item.root}`, item.text)
-            return true
-        }
         const extract = async item => {
             const path = `${destination}/${item.root}`
             const exists = await FSExtra.pathExists(path)

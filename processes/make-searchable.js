@@ -9,7 +9,7 @@ async function initialise(origin, destination, forceOCR, verbose, alert) {
         const sequence = [
             !forceOCR && {
                 name: 'Copying tagged PDFs',
-                setup: () => ocracy.operations.copyPDFIfTagged(origin, destination, 'shell', verbose, alert)
+                setup: () => ocracy.operations.copyPDFTagged(origin, destination, 'shell', verbose, alert)
             },
             !forceOCR && {
                 name: 'Symlinking untagged PDFs',
@@ -17,11 +17,11 @@ async function initialise(origin, destination, forceOCR, verbose, alert) {
             },
             {
                 name: forceOCR ? 'Converting PDFs to JPEG pages' : 'Converting untagged PDFs to JPEG pages',
-                setup: () => ocracy.operations.convertPDFToJPEGPages(forceOCR ? origin : cacheUntagged, cacheJpegPages, 'shell', 300, verbose, alert)
+                setup: () => ocracy.operations.convertPDFToJpegPages(forceOCR ? origin : cacheUntagged, cacheJpegPages, 'shell', 300, verbose, alert)
             },
             {
                 name: 'Converting JPEG pages to PDF pages',
-                setup: () => ocracy.operations.convertJPEGPagesToPDFPages(cacheJpegPages, cachePDFPages, 'shell', 'eng', verbose, alert)
+                setup: () => ocracy.operations.convertJpegPagesToPDFPages(cacheJpegPages, cachePDFPages, 'shell', 'eng', verbose, alert)
             },
             {
                 name: 'Combining PDF pages',

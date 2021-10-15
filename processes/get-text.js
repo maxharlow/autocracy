@@ -8,7 +8,7 @@ async function initialise(origin, destination, forceOCR, verbose, alert) {
         const cacheTextPages = '.ocracy-cache/text-pages'
         const sequence = [
             !forceOCR && {
-                name: 'Extracting PDF to text',
+                name: 'Extracting PDFs to texts',
                 setup: () => ocracy.operations.extractPDFToText(origin, destination, 'shell', verbose, alert)
             },
             !forceOCR && {
@@ -17,11 +17,11 @@ async function initialise(origin, destination, forceOCR, verbose, alert) {
             },
             {
                 name: forceOCR ? 'Converting PDFs to JPEG pages' : 'Converting untagged PDFs to JPEG pages',
-                setup: () => ocracy.operations.convertPDFToJPEGPages(forceOCR ? origin : cacheUntagged, cacheJpegPages, 'shell', 300, verbose, alert)
+                setup: () => ocracy.operations.convertPDFToJpegPages(forceOCR ? origin : cacheUntagged, cacheJpegPages, 'shell', 300, verbose, alert)
             },
             {
                 name: 'Converting JPEG pages to text pages',
-                setup: () => ocracy.operations.convertJPEGPagesToTextPages(cacheJpegPages, cacheTextPages, 'shell', 'eng', verbose, alert)
+                setup: () => ocracy.operations.convertJpegPagesToTextPages(cacheJpegPages, cacheTextPages, 'shell', 'eng', verbose, alert)
             },
             {
                 name: 'Combining text pages',

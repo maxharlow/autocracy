@@ -162,7 +162,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.copyPDFIfTagged(origin, destination, method, verbose, alert)
+            const process = await ocracy.operations.copyPDFTagged(origin, destination, method, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -184,7 +184,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.convertPDFToJPEGPages(origin, destination, method, density, verbose, alert)
+            const process = await ocracy.operations.convertPDFToJpegPages(origin, destination, method, density, verbose, alert)
             const total = await process.length()
             process.run().each(ticker('Working...', total))
         }
@@ -196,7 +196,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.convertJPEGPagesToTextPages(origin, destination, method, language, verbose, alert)
+            const process = await ocracy.operations.convertJpegPagesToTextPages(origin, destination, method, language, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()
@@ -209,7 +209,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.convertJPEGPagesToPDFPages(origin, destination, method, language, verbose, alert)
+            const process = await ocracy.operations.convertJpegPagesToPDFPages(origin, destination, method, language, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()

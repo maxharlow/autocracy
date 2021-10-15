@@ -71,9 +71,9 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
     }
 
     async function write(item) {
-        if (!item) return true
+        if (!item) return null
         await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'txt')}`, item.text)
-        return true
+        return null
     }
 
     async function setup() {

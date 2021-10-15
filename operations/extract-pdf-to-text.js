@@ -35,9 +35,9 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
     }
 
     async function write(item) {
-        if (item.text.trim() === '') return true // don't write empty files
+        if (item.text.trim() === '') return null // don't write empty files
         await FSExtra.writeFile(`${destination}/${item.root}`, item.text)
-        return true
+        return null
     }
 
     async function setup() {

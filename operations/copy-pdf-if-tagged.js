@@ -46,7 +46,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
             if (verbose) alert(`Copying ${copyFrom} to ${copyTo}...`)
             await FSExtra.copy(copyFrom, copyTo)
         }
-        return true
+        return null
     }
 
     async function setup() {

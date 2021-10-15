@@ -12,7 +12,7 @@ async function initialise(origin, intermediate, destination, verbose, alert) {
             if (verbose) alert(`Symlinking ${symlinkFrom} to ${symlinkTo}...`)
             await FSExtra.ensureSymlink(symlinkFrom, symlinkTo)
         }
-        return true
+        return null
     }
 
     async function setup() {

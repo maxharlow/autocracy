@@ -8,13 +8,25 @@ import ChildProcess from 'child_process'
 
 async function initialise(origin, destination, method = 'shell', verbose, alert) {
 
+    async function listing(item) {
+        const pages = await Globby.globby(`${origin}/${item.root}`)
+        if (pages.length === 0) {
+            alert(`No page files found for ${item.root}!`)
+            return null
+        }
+        return {
+            root: item.root,
+            pages
+        }
+    }
+
     async function combinerShell() {
         const isInstalled = await Lookpath.lookpath('pdfunite')
         if (!isInstalled) throw new Error('Poppler not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const pages = await Globby.globby(`${origin}/${item.root}`)
-            const pagesList = pages.map(page => `"${page}"`).join(' ')
+            if (!item) return null // skipped file
+            const pagesList = item.pages.map(page => `"${page}"`).join(' ')
             const output = Tempy.file()
             const command = `pdfunite ${pagesList} ${output}`
             if (verbose) alert(command)
@@ -26,20 +38,22 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         return { run }
     }
 
+    async function write(item)  {
+        if (!item) return null // skipped file
+        await FSExtra.writeFile(`${destination}/${item.root}`, item.data)
+        return null
+    }
+
     async function setup() {
         await FSExtra.ensureDir(destination)
         const combiners = {
             shell: combinerShell
         }
         const combiner = await combiners[method](destination)
-        const write = async item => {
-            await FSExtra.writeFile(`${destination}/${item.root}`, item.data)
-            return true
-        }
         const combine = async item => {
             const path = `${destination}/${item.root}`
             const exists = await FSExtra.pathExists(path)
-            if (exists) return
+            if (exists) return null // already exists, skip
             try {
                 const data = await combiner.run(item)
                 return { ...item, data }
@@ -54,7 +68,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
             return { root }
         })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().setOptions({ maxParallel: 1 }).map(combine).each(write)
+        const run = () => source().setOptions({ maxParallel: 1 }).map(listing).map(combine).each(write)
         return { run, length }
     }
 

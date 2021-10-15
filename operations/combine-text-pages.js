@@ -5,27 +5,31 @@ import * as Globby from 'globby'
 async function initialise(origin, destination, verbose, alert) {
 
     async function listing(item) {
-        const files = await Globby.globby('*', { cwd: `${origin}/${item.root}` })
+        const pages = await Globby.globby(`${origin}/${item.root}`)
+        if (pages.length === 0) {
+            alert(`No page files found for ${item.root}!`)
+            return null
+        }
         return {
             root: item.root,
-            files: files.map(file => `${origin}/${item.root}/${file}`)
+            pages
         }
     }
 
     async function read(item) {
         const exists = await FSExtra.exists(`${destination}/${item.root}`)
         if (exists) return null // already exists, skip
-        const texts = await Promise.all(item.files.map(file => FSExtra.readFile(file, 'utf8')))
+        const texts = await Promise.all(item.pages.map(file => FSExtra.readFile(file, 'utf8')))
         return {
             root: item.root,
             text: texts.join(' ')
         }
     }
 
-    const write = async item => {
-        if (!item) return true // skipped file
+    async function write(item) {
+        if (!item) return null // skipped file
         await FSExtra.writeFile(`${destination}/${item.root}`, item.text)
-        return true
+        return null
     }
 
     async function setup() {

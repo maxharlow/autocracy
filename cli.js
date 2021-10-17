@@ -2,7 +2,7 @@ import Readline from 'readline'
 import Process from 'process'
 import Yargs from 'yargs'
 import Progress from 'progress'
-import ocracy from './ocracy.js'
+import autocracy from './autocracy.js'
 
 function alert(message) {
     Readline.clearLine(process.stderr)
@@ -22,14 +22,14 @@ function ticker(text, total) {
 
 async function setup() {
     const instructions = Yargs(Process.argv.slice(2))
-        .usage('Usage: ocracy <command>')
+        .usage('Usage: autocracy <command>')
         .wrap(null)
         .option('V', { alias: 'verbose', type: 'boolean', describe: 'Print details', default: false })
         .help('?').alias('?', 'help')
         .version().alias('v', 'version')
     instructions.command('get-text', 'Extract or, if necessary, OCR each PDF, and output a text file', args => {
         args
-            .usage('Usage: ocracy get-text <origin> <destination>')
+            .usage('Usage: autocracy get-text <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -37,7 +37,7 @@ async function setup() {
     })
     instructions.command('make-searchable', 'Extract or, if necessary, OCR each PDF, and output new PDFs with the text embedded', args => {
         args
-            .usage('Usage: ocracy make-searchable <origin> <destination>')
+            .usage('Usage: autocracy make-searchable <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -45,7 +45,7 @@ async function setup() {
     })
     instructions.command('extract-pdf-to-text', false, args => {
         args
-            .usage('Usage: ocracy extract-pdf-to-text <origin> <destination>')
+            .usage('Usage: autocracy extract-pdf-to-text <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -53,7 +53,7 @@ async function setup() {
     })
     instructions.command('copy-pdf-if-tagged', false, args => {
         args
-            .usage('Usage: ocracy copy-pdf-if-tagged <origin> <destination>')
+            .usage('Usage: autocracy copy-pdf-if-tagged <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -61,7 +61,7 @@ async function setup() {
     })
     instructions.command('symlink-missing', false, args => {
         args
-            .usage('Usage: ocracy symlink-missing <origin> <intermedidate> <destination>')
+            .usage('Usage: autocracy symlink-missing <origin> <intermedidate> <destination>')
             .demandCommand(3, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('intermediate', { type: 'string', describe: 'Intermediate directory' })
@@ -69,7 +69,7 @@ async function setup() {
     })
     instructions.command('convert-pdf-to-jpeg-pages', false, args => {
         args
-            .usage('Usage: ocracy convert-pdf-to-jpeg-pages <origin> <destination>')
+            .usage('Usage: autocracy convert-pdf-to-jpeg-pages <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -78,7 +78,7 @@ async function setup() {
     })
     instructions.command('convert-jpeg-pages-to-text-pages', false, args => {
         args
-            .usage('Usage: ocracy convert-jpeg-pages-to-text-pages <origin> <destination>')
+            .usage('Usage: autocracy convert-jpeg-pages-to-text-pages <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -88,7 +88,7 @@ async function setup() {
     })
     instructions.command('convert-jpeg-pages-to-pdf-pages', false, args => {
         args
-            .usage('Usage: ocracy convert-jpeg-pages-to-pdf-pages <origin> <destination>')
+            .usage('Usage: autocracy convert-jpeg-pages-to-pdf-pages <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -98,14 +98,14 @@ async function setup() {
     })
     instructions.command('combine-text-pages', false, args => {
         args
-            .usage('Usage: ocracy combine-text-pages <origin> <destination>')
+            .usage('Usage: autocracy combine-text-pages <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
     })
     instructions.command('combine-pdf-pages', false, args => {
         args
-            .usage('Usage: ocracy combine-pdf-pages <origin> <destination>')
+            .usage('Usage: autocracy combine-pdf-pages <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -121,7 +121,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = await ocracy.getText(origin, destination, forceOcr, verbose, alert)
+            const procedures = await autocracy.getText(origin, destination, forceOcr, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()
@@ -137,7 +137,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = await ocracy.makeSearchable(origin, destination, forceOcr, verbose, alert)
+            const procedures = await autocracy.makeSearchable(origin, destination, forceOcr, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()
@@ -153,7 +153,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.extractPDFToText(origin, destination, method, verbose, alert)
+            const process = await autocracy.operations.extractPDFToText(origin, destination, method, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -164,7 +164,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.copyPDFTagged(origin, destination, method, verbose, alert)
+            const process = await autocracy.operations.copyPDFTagged(origin, destination, method, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -174,7 +174,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.symlinkMissing(origin, intermediate, destination, verbose, alert)
+            const process = await autocracy.operations.symlinkMissing(origin, intermediate, destination, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -186,7 +186,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.convertPDFToJpegPages(origin, destination, method, density, verbose, alert)
+            const process = await autocracy.operations.convertPDFToJpegPages(origin, destination, method, density, verbose, alert)
             const total = await process.length()
             process.run().each(ticker('Working...', total))
         }
@@ -199,7 +199,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.convertJpegPagesToTextPages(origin, destination, method, language, density, verbose, alert)
+            const process = await autocracy.operations.convertJpegPagesToTextPages(origin, destination, method, language, density, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()
@@ -213,7 +213,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.convertJpegPagesToPDFPages(origin, destination, method, language, density, verbose, alert)
+            const process = await autocracy.operations.convertJpegPagesToPDFPages(origin, destination, method, language, density, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()
@@ -224,7 +224,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.combineTextPages(origin, destination, verbose, alert)
+            const process = await autocracy.operations.combineTextPages(origin, destination, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -235,7 +235,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.combinePDFPages(origin, destination, method, verbose, alert)
+            const process = await autocracy.operations.combinePDFPages(origin, destination, method, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }

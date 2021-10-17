@@ -1,4 +1,4 @@
-Ocracy
-======
+Autocracy
+=========
 
-A toolkit for extracting text from PDF files in bulk.
+A toolkit for automating OCR.

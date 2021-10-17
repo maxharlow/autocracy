@@ -1,13 +1,13 @@
 {
-    "name": "ocracy",
-    "description": "A toolkit for extracting text from PDF files in bulk.",
+    "name": "autocracy",
+    "description": "A toolkit for automating OCR.",
     "version": "1.0.0",
     "author": "Max Harlow <contact@maxharlow.com> (https://maxharlow.com/)",
     "license": "Apache-2.0",
     "type": "module",
     "repository": {
         "type": "git",
-        "url": "https://github.com/maxharlow/ocracy.git"
+        "url": "https://github.com/maxharlow/autocracy.git"
     },
     "dependencies": {
         "@aws-sdk/client-textract": "3.36.x",
@@ -23,6 +23,6 @@
         "yargs": "17.2.x"
     },
     "bin": {
-        "ocracy": "./bin.js"
+        "autocracy": "./bin.js"
     }
 }

@@ -24,7 +24,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
     }
 
     async function write(item) {
-        if (!item) return null
+        if (!item) return null // skipped file
         await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'pdf')}`, item.data)
         return null
     }
@@ -37,7 +37,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
         const converter = await converters[method]()
         const convert = async item => {
             const exists = await FSExtra.pathExists(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'pdf')}`)
-            if (exists) return null
+            if (exists) return null // already exists, skip
             await FSExtra.ensureDir(`${destination}/${item.root}`)
             try {
                 const data = await converter.run(item)
@@ -45,6 +45,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
             }
             catch (e) {
                 console.error(`Error: ${e.message} (retrying...)`)
+                await FSExtra.remove(`${destination}/${item.root}`) // so we don't trigger the exists check and skip
                 if (verbose) console.error(e.stack)
                 return convert(item)
             }

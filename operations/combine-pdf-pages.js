@@ -12,7 +12,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         const pages = await Globby.globby(`${origin}/${item.root}`)
         if (pages.length === 0) {
             alert(`No page files found for ${item.root}!`)
-            return null
+            return null // skipped file
         }
         return {
             root: item.root,

@@ -39,7 +39,7 @@ async function initialise(origin, destination, method = 'shell', density = 300, 
         const converter = await converters[method](destination)
         const convert = async item => {
             const exists = await FSExtra.pathExists(`${destination}/${item.root}`)
-            if (exists) return null
+            if (exists) return null  // already exists, skip
             await FSExtra.mkdir(`${destination}/${item.root}`)
             try {
                 await converter.run(item)
@@ -47,6 +47,7 @@ async function initialise(origin, destination, method = 'shell', density = 300, 
             }
             catch (e) {
                 console.error(`Error: ${e.message} (retrying...)`)
+                await FSExtra.remove(`${destination}/${item.root}`) // so we don't trigger the exists check and skip
                 if (verbose) console.error(e.stack)
                 return convert(item)
             }

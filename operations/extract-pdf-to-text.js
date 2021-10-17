@@ -50,7 +50,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         const extract = async item => {
             const path = `${destination}/${item.root}`
             const exists = await FSExtra.pathExists(path)
-            if (exists) return
+            if (exists) return // already exists, skip
             try {
                 const result = await extractor.run(item)
                 const text = result.replace(/\s+/g, ' ')

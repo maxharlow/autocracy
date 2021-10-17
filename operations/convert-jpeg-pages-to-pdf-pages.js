@@ -5,14 +5,14 @@ import * as Globby from 'globby'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 
-async function initialise(origin, destination, method = 'shell', language = 'eng', verbose, alert) {
+async function initialise(origin, destination, method = 'shell', language = 'eng', density = 300, verbose, alert) {
 
     async function converterShell() {
         const isInstalled = await Lookpath.lookpath('tesseract')
         if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${language} --dpi 300 --psm 11 "${origin}/${item.root}/${item.pagefile}" - pdf`
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${language} --dpi ${density} --psm 11 "${origin}/${item.root}/${item.pagefile}" - pdf`
             if (verbose) alert(command)
             const result = await execute(command, { encoding: 'binary', maxBuffer: 2 * 1024 * 1024 * 1024 }) // 2GB
             return Buffer.from(result.stdout, 'binary')

@@ -19,7 +19,7 @@ async function initialise(origin, destination, forceOCR, verbose, alert) {
         },
         {
             name: 'Converting JPEG pages to PDF pages',
-            setup: () => ocracy.operations.convertJpegPagesToPDFPages(cacheJpegPages, cachePDFPages, 'shell', 'eng', verbose, alert)
+            setup: () => ocracy.operations.convertJpegPagesToPDFPages(cacheJpegPages, cachePDFPages, 'shell', 'eng', 300, verbose, alert)
         },
         {
             name: 'Combining PDF pages',

@@ -8,14 +8,14 @@ import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 import * as AWSTextract from '@aws-sdk/client-textract'
 
-async function initialise(origin, destination, method = 'shell', language = 'eng', verbose, alert) {
+async function initialise(origin, destination, method = 'shell', language = 'eng', density = 300, verbose, alert) {
 
     async function converterShell() {
         const isInstalled = await Lookpath.lookpath('tesseract')
         if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${language} --dpi 300 --psm 11 "${origin}/${item.root}/${item.pagefile}" -`
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${language} --dpi ${density} --psm 11 "${origin}/${item.root}/${item.pagefile}" -`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout
@@ -36,7 +36,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
             await worker.loadLanguage(language)
             await worker.initialize(language)
             await worker.setParameters({
-                user_defined_dpi: 300,
+                user_defined_dpi: density,
                 tessedit_pageseg_mode: Tesseract.PSM.PSM_SPARSE_TEXT
             })
             scheduler.addWorker(worker)

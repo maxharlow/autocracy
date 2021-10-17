@@ -84,6 +84,7 @@ async function setup() {
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['aws-textract', 'library', 'shell'], default: 'shell' })
             .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find (not used by AWS)', default: 'eng' })
+            .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
     })
     instructions.command('convert-jpeg-pages-to-pdf-pages', false, args => {
         args
@@ -93,6 +94,7 @@ async function setup() {
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
             .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find', default: 'eng' })
+            .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
     })
     instructions.command('combine-text-pages', false, args => {
         args
@@ -193,10 +195,11 @@ async function setup() {
                 _: [, origin, destination],
                 method,
                 language,
+                density,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.convertJpegPagesToTextPages(origin, destination, method, language, verbose, alert)
+            const process = await ocracy.operations.convertJpegPagesToTextPages(origin, destination, method, language, density, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()
@@ -206,10 +209,11 @@ async function setup() {
                 _: [, origin, destination],
                 method,
                 language,
+                density,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await ocracy.operations.convertJpegPagesToPDFPages(origin, destination, method, language, verbose, alert)
+            const process = await ocracy.operations.convertJpegPagesToPDFPages(origin, destination, method, language, density, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()

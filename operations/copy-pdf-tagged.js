@@ -51,8 +51,14 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const source = () => Scramjet.DataStream.from(Globby.globbyStream('*', { cwd: origin, deep: 1 })).map(root => {
-            return { root }
+        const sourceGenerator = () => Globby.globbyStream(origin, {
+            objectMode: true,
+            deep: 1
+        })
+        const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
+            return {
+                root: file.name
+            }
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().map(copyMaybe)

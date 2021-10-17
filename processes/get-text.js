@@ -33,6 +33,7 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
                 forceOCR ? origin : cacheUntagged,
                 cacheJpegPages,
                 {
+                    ...forceOCR ? {} : { originInitial: origin },
                     method: 'shell',
                     density: 300
                 },
@@ -46,6 +47,7 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
                 cacheJpegPages,
                 cacheTextPages,
                 {
+                    originInitial: origin,
                     method: 'shell',
                     language: 'eng',
                     density: 300
@@ -59,7 +61,9 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
             setup: () => autocracy.operations.combineTextPages(
                 cacheTextPages,
                 destination,
-                {},
+                {
+                    originInitial: origin
+                },
                 verbose,
                 alert
             )

@@ -36,8 +36,10 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }
         const converter = await converters[options.method]()
         const convert = async item => {
-            const exists = await FSExtra.pathExists(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'pdf')}`)
-            if (exists) return { item, skip: true } // already exists, skip
+            const outputExists = await FSExtra.exists(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'pdf')}`)
+            if (outputExists) return { item, skip: true } // already exists, skip
+            const inputExists = await FSExtra.exists(`${origin}/${item.root}`)
+            if (!inputExists) return { item, skip: true } // no input, skip
             await FSExtra.ensureDir(`${destination}/${item.root}`)
             try {
                 const data = await converter.run(item)
@@ -50,9 +52,18 @@ async function initialise(origin, destination, options = { method: 'shell', lang
                 return convert(item)
             }
         }
-        const source = () => Scramjet.DataStream.from(Globby.globbyStream('**', { cwd: origin, deep: 2 })).map(path => {
-            const [root, pagefile] = path.split('/')
-            return { root, pagefile }
+        const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
+            objectMode: true,
+            deep: 1
+        })
+        const source = () => Scramjet.DataStream.from(sourceGenerator()).flatMap(async file => {
+            const pages = await Globby.globby(`${origin}/${file.name}/*`, { objectMode: true })
+            return pages.map(pagefile => {
+                return {
+                    root: file.name,
+                    pagefile: pagefile.name
+                }
+            })
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().map(convert).map(write)

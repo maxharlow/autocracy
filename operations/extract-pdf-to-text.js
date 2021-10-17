@@ -50,8 +50,8 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         const extractor = await extractors[options.method](destination)
         const extract = async item => {
             const path = `${destination}/${item.root}`
-            const exists = await FSExtra.pathExists(path)
-            if (exists) return { item, skip: true } // already exists, skip
+            const outputExists = await FSExtra.exists(path)
+            if (outputExists) return { item, skip: true } // already exists, skip
             try {
                 const result = await extractor.run(item)
                 const text = result.replace(/\s+/g, ' ')
@@ -63,8 +63,14 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                 return extract(item)
             }
         }
-        const source = () => Scramjet.DataStream.from(Globby.globbyStream('*', { cwd: origin, deep: 1 })).map(root => {
-            return { root }
+        const sourceGenerator = () => Globby.globbyStream(origin, {
+            objectMode: true,
+            deep: 1
+        })
+        const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
+            return {
+                root: file.name
+            }
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().setOptions({ maxParallel: 1 }).map(extract).each(write)

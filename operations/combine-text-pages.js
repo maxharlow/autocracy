@@ -6,10 +6,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
 
     async function listing(item) {
         const pages = await Globby.globby(`${origin}/${item.root}`)
-        if (pages.length === 0) {
-            alert(`No page files found for ${item.root}!`)
-            return { item, skip: true } // no pages found to combine, skip
-        }
+        if (pages.length === 0) return { item, skip: true } // no pages found to combine, skip
         return {
             root: item.root,
             pages
@@ -17,8 +14,8 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
     }
 
     async function read(item) {
-        const exists = await FSExtra.exists(`${destination}/${item.root}`)
-        if (exists) return { item, skip: true } // already exists, skip
+        const outputExists = await FSExtra.exists(`${destination}/${item.root}`)
+        if (outputExists) return { item, skip: true } // already exists, skip
         const texts = await Promise.all(item.pages.map(file => FSExtra.readFile(file, 'utf8')))
         return {
             root: item.root,
@@ -34,8 +31,14 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const source = () => Scramjet.DataStream.from(Globby.globbyStream('*', { cwd: origin, deep: 1, onlyFiles: false })).map(root => {
-            return { root }
+        const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
+            objectMode: true,
+            deep: 1
+        })
+        const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
+            return {
+                root: file.name
+            }
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().map(listing).map(read).map(write)

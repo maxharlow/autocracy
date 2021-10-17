@@ -5,8 +5,8 @@ import * as Globby from 'globby'
 async function initialise(origin, intermediate, destination, verbose, alert) {
 
     async function symlink(item) {
-        const exists = await FSExtra.exists(`${intermediate}/${item.root}`) // so tagged-text was found and extracted
-        if (!exists) {
+        const outputExists = await FSExtra.exists(`${intermediate}/${item.root}`) // so tagged-text was found and extracted
+        if (!outputExists) {
             const symlinkFrom = `${origin}/${item.root}`
             const symlinkTo = `${destination}/${item.root}`
             if (verbose) alert(`Symlinking ${symlinkFrom} to ${symlinkTo}...`)
@@ -17,8 +17,14 @@ async function initialise(origin, intermediate, destination, verbose, alert) {
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const source = () => Scramjet.DataStream.from(Globby.globbyStream('*', { cwd: origin, deep: 1 })).map(root => {
-            return { root }
+        const sourceGenerator = () => Globby.globbyStream(origin, {
+            objectMode: true,
+            deep: 1
+        })
+        const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
+            return {
+                root: file.name
+            }
         })
         const run = () => source().map(symlink)
         const length = () => source().reduce(a => a + 1, 0)

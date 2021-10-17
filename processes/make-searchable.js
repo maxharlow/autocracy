@@ -33,6 +33,7 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
                 forceOCR ? origin : cacheUntagged,
                 cacheJpegPages,
                 {
+                    ...forceOCR ? {} : { originInitial: origin },
                     method: 'shell',
                     density: 300
                 },
@@ -46,6 +47,7 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
                 cacheJpegPages,
                 cachePDFPages,
                 {
+                    originInitial: origin,
                     method: 'shell',
                     language: 'eng',
                     density: 300
@@ -60,6 +62,7 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
                 cachePDFPages,
                 destination,
                 {
+                    originInitial: origin,
                     method: 'shell'
                 },
                 verbose,

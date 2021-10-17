@@ -1,6 +1,6 @@
 import autocracy from './../autocracy.js'
 
-async function initialise(origin, destination, forceOCR, verbose, alert) {
+function initialise(origin, destination, forceOCR, verbose, alert) {
     const cacheUntagged = '.autocracy-cache/untagged'
     const cacheJpegPages = '.autocracy-cache/jpeg-pages'
     const cachePDFPages = '.autocracy-cache/pdf-pages'

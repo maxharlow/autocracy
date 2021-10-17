@@ -121,7 +121,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = await autocracy.getText(origin, destination, forceOcr, verbose, alert)
+            const procedures = autocracy.getText(origin, destination, forceOcr, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()
@@ -137,7 +137,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = await autocracy.makeSearchable(origin, destination, forceOcr, verbose, alert)
+            const procedures = autocracy.makeSearchable(origin, destination, forceOcr, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()

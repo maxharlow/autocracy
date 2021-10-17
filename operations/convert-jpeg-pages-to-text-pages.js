@@ -70,10 +70,6 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
         }
     }
 
-    function converterAWSLambda() {
-        // todo
-    }
-
     async function write(item) {
         if (item.skip) return item
         await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'txt')}`, item.text)

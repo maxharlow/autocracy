@@ -12,7 +12,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         const pages = await Globby.globby(`${origin}/${item.root}`)
         if (pages.length === 0) {
             alert(`No page files found for ${item.root}!`)
-            return null // skipped file
+            return { item, skip: true } // no pages found to combine, skip
         }
         return {
             root: item.root,
@@ -25,7 +25,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         if (!isInstalled) throw new Error('Poppler not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            if (!item) return null // skipped file
+            if (item.skip) return item
             const pagesList = item.pages.map(page => `"${page}"`).join(' ')
             const output = Tempy.file()
             const command = `pdfunite ${pagesList} ${output}`
@@ -39,9 +39,9 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
     }
 
     async function write(item)  {
-        if (!item) return null // skipped file
+        if (item.skip) return item
         await FSExtra.writeFile(`${destination}/${item.root}`, item.data)
-        return null
+        return item
     }
 
     async function setup() {
@@ -53,7 +53,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         const combine = async item => {
             const path = `${destination}/${item.root}`
             const exists = await FSExtra.pathExists(path)
-            if (exists) return null // already exists, skip
+            if (exists) return { item, skip: true } // already exists, skip
             try {
                 const data = await combiner.run(item)
                 return { ...item, data }

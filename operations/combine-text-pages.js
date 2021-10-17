@@ -8,7 +8,7 @@ async function initialise(origin, destination, verbose, alert) {
         const pages = await Globby.globby(`${origin}/${item.root}`)
         if (pages.length === 0) {
             alert(`No page files found for ${item.root}!`)
-            return null // skipped file
+            return { item, skip: true } // no pages found to combine, skip
         }
         return {
             root: item.root,
@@ -18,7 +18,7 @@ async function initialise(origin, destination, verbose, alert) {
 
     async function read(item) {
         const exists = await FSExtra.exists(`${destination}/${item.root}`)
-        if (exists) return null // already exists, skip
+        if (exists) return { item, skip: true } // already exists, skip
         const texts = await Promise.all(item.pages.map(file => FSExtra.readFile(file, 'utf8')))
         return {
             root: item.root,
@@ -27,9 +27,9 @@ async function initialise(origin, destination, verbose, alert) {
     }
 
     async function write(item) {
-        if (!item) return null // skipped file
+        if (item.skip) return item
         await FSExtra.writeFile(`${destination}/${item.root}`, item.text)
-        return null
+        return item
     }
 
     async function setup() {

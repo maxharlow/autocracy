@@ -24,9 +24,9 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
     }
 
     async function write(item) {
-        if (!item) return null // skipped file
+        if (item.skip) return item
         await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'pdf')}`, item.data)
-        return null
+        return item
     }
 
     async function setup() {
@@ -37,7 +37,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
         const converter = await converters[method]()
         const convert = async item => {
             const exists = await FSExtra.pathExists(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'pdf')}`)
-            if (exists) return null // already exists, skip
+            if (exists) return { item, skip: true } // already exists, skip
             await FSExtra.ensureDir(`${destination}/${item.root}`)
             try {
                 const data = await converter.run(item)

@@ -70,10 +70,14 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
         }
     }
 
+    function converterAWSLambda() {
+        // todo
+    }
+
     async function write(item) {
-        if (!item) return null // skipped file
+        if (item.skip) return item
         await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'txt')}`, item.text)
-        return null
+        return item
     }
 
     async function setup() {
@@ -86,7 +90,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
         const converter = await converters[method]()
         const convert = async item => {
             const exists = await FSExtra.pathExists(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'txt')}`)
-            if (exists) return null // already exists, skip
+            if (exists) return { ...item, skip: true } // already exists, skip
             await FSExtra.ensureDir(`${destination}/${item.root}`)
             try {
                 const result = await converter.run(item)

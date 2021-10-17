@@ -6,7 +6,7 @@ import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 // import MagickWasm from '@imagemagick/magick-wasm'
 
-async function initialise(origin, destination, method = 'shell', density = 300, verbose, alert) {
+async function initialise(origin, destination, options = { method: 'shell', density: 300 }, verbose, alert) {
 
     async function converterShell(destination) {
         const isInstalled = await Lookpath.lookpath('magick')
@@ -15,7 +15,7 @@ async function initialise(origin, destination, method = 'shell', density = 300, 
         const executable = !isInstalled ? 'convert' : 'magick convert'
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `${executable} -density ${density} "pdf:${origin}/${item.root}" "${destination}/${item.root}/page-%04d.jpeg"`
+            const command = `${executable} -density ${options.density} "pdf:${origin}/${item.root}" "${destination}/${item.root}/page-%04d.jpeg"`
             if (verbose) alert(command)
             await execute(command)
         }
@@ -36,7 +36,7 @@ async function initialise(origin, destination, method = 'shell', density = 300, 
             shell: converterShell,
             library: converterLibrary
         }
-        const converter = await converters[method](destination)
+        const converter = await converters[options.method](destination)
         const convert = async item => {
             const exists = await FSExtra.pathExists(`${destination}/${item.root}`)
             if (exists) return { item, skip: true }  // already exists, skip

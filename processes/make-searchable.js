@@ -4,13 +4,15 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
     const cacheUntagged = '.autocracy-cache/untagged'
     const cacheJpegPages = '.autocracy-cache/jpeg-pages'
     const cachePDFPages = '.autocracy-cache/pdf-pages'
-    const sequence = [
+    const operations = [
         !forceOCR && {
             name: 'Copying already-tagged PDFs',
             setup: () => autocracy.operations.copyPDFTagged(
                 origin,
                 destination,
-                'shell',
+                {
+                    method: 'shell'
+                },
                 verbose,
                 alert
             )
@@ -30,8 +32,10 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
             setup: () => autocracy.operations.convertPDFToJpegPages(
                 forceOCR ? origin : cacheUntagged,
                 cacheJpegPages,
-                'shell',
-                300,
+                {
+                    method: 'shell',
+                    density: 300
+                },
                 verbose,
                 alert
             )
@@ -41,9 +45,11 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
             setup: () => autocracy.operations.convertJpegPagesToPDFPages(
                 cacheJpegPages,
                 cachePDFPages,
-                'shell',
-                'eng',
-                300,
+                {
+                    method: 'shell',
+                    language: 'eng',
+                    density: 300
+                },
                 verbose,
                 alert
             )
@@ -53,13 +59,15 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
             setup: () => autocracy.operations.combinePDFPages(
                 cachePDFPages,
                 destination,
-                'shell',
+                {
+                    method: 'shell'
+                },
                 verbose,
                 alert
             )
         }
     ]
-    return sequence.filter(x => x)
+    return operations.filter(x => x)
 }
 
 export default initialise

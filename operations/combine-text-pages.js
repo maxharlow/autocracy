@@ -2,7 +2,7 @@ import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import * as Globby from 'globby'
 
-async function initialise(origin, destination, verbose, alert) {
+async function initialise(origin, destination, options = {}, verbose, alert) {
 
     async function listing(item) {
         const pages = await Globby.globby(`${origin}/${item.root}`)

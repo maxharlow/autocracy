@@ -6,7 +6,7 @@ import Lookpath from 'lookpath'
 import Tempy from 'tempy'
 import ChildProcess from 'child_process'
 
-async function initialise(origin, destination, method = 'shell', verbose, alert) {
+async function initialise(origin, destination, options = { method: 'shell' }, verbose, alert) {
 
     async function listing(item) {
         const pages = await Globby.globby(`${origin}/${item.root}`)
@@ -49,7 +49,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
         const combiners = {
             shell: combinerShell
         }
-        const combiner = await combiners[method](destination)
+        const combiner = await combiners[options.method](destination)
         const combine = async item => {
             const path = `${destination}/${item.root}`
             const exists = await FSExtra.pathExists(path)

@@ -6,7 +6,7 @@ import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import PDF2Json from 'pdf2json'
 
-async function initialise(origin, destination, method = 'shell', verbose, alert) {
+async function initialise(origin, destination, options = { method: 'shell' }, verbose, alert) {
 
     async function extractorShell() {
         const isInstalled = await Lookpath.lookpath('pdftotext')
@@ -47,7 +47,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
             shell: extractorShell,
             library: extractorLibrary
         }
-        const extractor = await extractors[method](destination)
+        const extractor = await extractors[options.method](destination)
         const extract = async item => {
             const path = `${destination}/${item.root}`
             const exists = await FSExtra.pathExists(path)

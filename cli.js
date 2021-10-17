@@ -153,7 +153,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.extractPDFToText(origin, destination, method, verbose, alert)
+            const process = await autocracy.operations.extractPDFToText(origin, destination, { method }, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -164,7 +164,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.copyPDFTagged(origin, destination, method, verbose, alert)
+            const process = await autocracy.operations.copyPDFTagged(origin, destination, { method }, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -186,7 +186,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertPDFToJpegPages(origin, destination, method, density, verbose, alert)
+            const process = await autocracy.operations.convertPDFToJpegPages(origin, destination, method, { density }, verbose, alert)
             const total = await process.length()
             process.run().each(ticker('Working...', total))
         }
@@ -199,7 +199,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertJpegPagesToTextPages(origin, destination, method, language, density, verbose, alert)
+            const process = await autocracy.operations.convertJpegPagesToTextPages(origin, destination, { method, language, density }, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()
@@ -213,7 +213,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertJpegPagesToPDFPages(origin, destination, method, language, density, verbose, alert)
+            const process = await autocracy.operations.convertJpegPagesToPDFPages(origin, destination, { method, language, density }, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()
@@ -224,7 +224,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.combineTextPages(origin, destination, verbose, alert)
+            const process = await autocracy.operations.combineTextPages(origin, destination, {}, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -235,7 +235,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.combinePDFPages(origin, destination, method, verbose, alert)
+            const process = await autocracy.operations.combinePDFPages(origin, destination, { method }, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }

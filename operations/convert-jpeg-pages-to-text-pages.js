@@ -8,14 +8,14 @@ import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 import * as AWSTextract from '@aws-sdk/client-textract'
 
-async function initialise(origin, destination, method = 'shell', language = 'eng', density = 300, verbose, alert) {
+async function initialise(origin, destination, options = { method: 'shell', language: 'eng', density: 300 }, verbose, alert) {
 
     async function converterShell() {
         const isInstalled = await Lookpath.lookpath('tesseract')
         if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${language} --dpi ${density} --psm 11 "${origin}/${item.root}/${item.pagefile}" -`
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${origin}/${item.root}/${item.pagefile}" -`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout
@@ -33,10 +33,10 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
             await previous
             const worker = Tesseract.createWorker()
             await worker.load()
-            await worker.loadLanguage(language)
-            await worker.initialize(language)
+            await worker.loadLanguage(options.language)
+            await worker.initialize(options.language)
             await worker.setParameters({
-                user_defined_dpi: density,
+                user_defined_dpi: options.density,
                 tessedit_pageseg_mode: Tesseract.PSM.PSM_SPARSE_TEXT
             })
             scheduler.addWorker(worker)
@@ -83,7 +83,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
             library: converterLibrary,
             shell: converterShell
         }
-        const converter = await converters[method]()
+        const converter = await converters[options.method]()
         const convert = async item => {
             const exists = await FSExtra.pathExists(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'txt')}`)
             if (exists) return { ...item, skip: true } // already exists, skip
@@ -106,7 +106,7 @@ async function initialise(origin, destination, method = 'shell', language = 'eng
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => {
-            if (method === 'aws') return source().setOptions({ maxParallel: 1 }).rate(1).map(convert).map(write)
+            if (options.method === 'aws-textract') return source().setOptions({ maxParallel: 1 }).rate(1).map(convert).map(write)
             return source().map(convert).map(write)
         }
         return { run, length, terminate: converter.terminate }

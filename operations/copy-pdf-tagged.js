@@ -6,7 +6,7 @@ import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import PDF2Json from 'pdf2json'
 
-async function initialise(origin, destination, method = 'shell', verbose, alert) {
+async function initialise(origin, destination, options = { method: 'shell' }, verbose, alert) {
 
     async function detectorShell() {
         const isInstalled = await Lookpath.lookpath('pdftotext')
@@ -38,7 +38,7 @@ async function initialise(origin, destination, method = 'shell', verbose, alert)
             shell: detectorShell,
             library: detectorLibrary
         }
-        const detector = await detectors[method]()
+        const detector = await detectors[options.method]()
         const isTagged = await detector.run(item)
         if (isTagged) {
             const copyFrom = `${origin}/${item.root}`

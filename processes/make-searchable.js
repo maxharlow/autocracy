@@ -6,7 +6,7 @@ async function initialise(origin, destination, forceOCR, verbose, alert) {
     const cachePDFPages = '.autocracy-cache/pdf-pages'
     const sequence = [
         !forceOCR && {
-            name: 'Copying tagged PDFs',
+            name: 'Copying already-tagged PDFs',
             setup: () => autocracy.operations.copyPDFTagged(origin, destination, 'shell', verbose, alert)
         },
         !forceOCR && {

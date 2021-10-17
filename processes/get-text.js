@@ -6,7 +6,7 @@ async function initialise(origin, destination, forceOCR, verbose, alert) {
     const cacheTextPages = '.autocracy-cache/text-pages'
     const sequence = [
         !forceOCR && {
-            name: 'Extracting PDFs to texts',
+            name: 'Extracting PDFs to full texts',
             setup: () => autocracy.operations.extractPDFToText(origin, destination, 'shell', verbose, alert)
         },
         !forceOCR && {
@@ -22,7 +22,7 @@ async function initialise(origin, destination, forceOCR, verbose, alert) {
             setup: () => autocracy.operations.convertJpegPagesToTextPages(cacheJpegPages, cacheTextPages, 'shell', 'eng', 300, verbose, alert)
         },
         {
-            name: 'Combining text pages',
+            name: 'Combining text pages into full texts',
             setup: () => autocracy.operations.combineTextPages(cacheTextPages, destination, verbose, alert)
         }
     ]

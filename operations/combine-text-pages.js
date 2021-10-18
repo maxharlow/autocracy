@@ -14,6 +14,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
     }
 
     async function read(item) {
+        if (item.skip) return item
         const outputExists = await FSExtra.exists(`${destination}/${item.root}`)
         if (outputExists) return { item, skip: true } // already exists, skip
         const texts = await Promise.all(item.pages.map(file => FSExtra.readFile(file, 'utf8')))

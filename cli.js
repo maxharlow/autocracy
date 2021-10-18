@@ -186,7 +186,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertPDFToJpegPages(origin, destination, method, { density }, verbose, alert)
+            const process = await autocracy.operations.convertPDFToJpegPages(origin, destination, { method, density }, verbose, alert)
             const total = await process.length()
             process.run().each(ticker('Working...', total))
         }

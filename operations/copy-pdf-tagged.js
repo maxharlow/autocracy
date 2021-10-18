@@ -4,16 +4,15 @@ import Scramjet from 'scramjet'
 import * as Globby from 'globby'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
-import PDF2Json from 'pdf2json'
 
 async function initialise(origin, destination, options = { method: 'shell' }, verbose, alert) {
 
     async function detectorShell() {
-        const isInstalled = await Lookpath.lookpath('pdftotext')
-        if (!isInstalled) throw new Error('Poppler not found!')
+        const isInstalled = await Lookpath.lookpath('mutool')
+        if (!isInstalled) throw new Error('MuPDF not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `pdftotext "${origin}/${item.root}" -`
+            const command = `mutool draw -F txt "${origin}/${item.root}"`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout.trim() !== ''
@@ -21,22 +20,9 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         return { run }
     }
 
-    function detectorLibrary(item) {
-        const parser = new PDF2Json(null, true)
-        const run = () => {
-            return new Promise((resolve, reject) => {
-                parser.on('pdfParser_dataError', reject)
-                parser.on('pdfParser_dataReady', () => resolve(parser.getRawTextContent().trim() !== ''))
-                parser.loadPDF(`${origin}/${item.root}`)
-            })
-        }
-        return { run }
-    }
-
     async function copyMaybe(item) {
         const detectors = {
-            shell: detectorShell,
-            library: detectorLibrary
+            shell: detectorShell
         }
         const detector = await detectors[options.method]()
         const isTagged = await detector.run(item)

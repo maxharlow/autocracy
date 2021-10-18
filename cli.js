@@ -51,9 +51,9 @@ async function setup() {
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
     })
-    instructions.command('copy-pdf-if-tagged', false, args => {
+    instructions.command('copy-pdf-tagged', false, args => {
         args
-            .usage('Usage: autocracy copy-pdf-if-tagged <origin> <destination>')
+            .usage('Usage: autocracy copy-pdf-tagged <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -157,7 +157,7 @@ async function setup() {
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
-        else if (command === 'copy-pdf-if-tagged') {
+        else if (command === 'copy-pdf-tagged') {
             const {
                 _: [, origin, destination],
                 method,

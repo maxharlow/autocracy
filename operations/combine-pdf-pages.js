@@ -18,14 +18,14 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
     }
 
     async function combinerShell() {
-        const isInstalled = await Lookpath.lookpath('pdfunite')
-        if (!isInstalled) throw new Error('Poppler not found!')
+        const isInstalled = await Lookpath.lookpath('mutool')
+        if (!isInstalled) throw new Error('MuPDF not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
             if (item.skip) return item
             const pagesList = item.pages.map(page => `"${page}"`).join(' ')
             const output = Tempy.file()
-            const command = `pdfunite ${pagesList} ${output}`
+            const command = `mutool merge -o ${output} ${pagesList}`
             if (verbose) alert(command)
             await execute(command)
             const result = await FSExtra.readFile(output)

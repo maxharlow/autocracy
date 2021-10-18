@@ -73,7 +73,7 @@ async function setup() {
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
-            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
+            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['shell'], default: 'shell' })
             .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
     })
     instructions.command('convert-jpeg-pages-to-text-pages', false, args => {

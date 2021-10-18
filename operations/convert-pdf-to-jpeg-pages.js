@@ -4,7 +4,6 @@ import Scramjet from 'scramjet'
 import * as Globby from 'globby'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
-// import MagickWasm from '@imagemagick/magick-wasm'
 
 async function initialise(origin, destination, options = { method: 'shell', density: 300 }, verbose, alert) {
 
@@ -22,19 +21,10 @@ async function initialise(origin, destination, options = { method: 'shell', dens
         return { run }
     }
 
-    async function converterLibrary(destination) {
-        // await MagickWasm.initializeImageMagick()
-        const run = async item => {
-            // todo
-        }
-        return { run }
-    }
-
     async function setup() {
         await FSExtra.ensureDir(destination)
         const converters = {
-            shell: converterShell,
-            library: converterLibrary
+            shell: converterShell
         }
         const converter = await converters[options.method](destination)
         const convert = async item => {

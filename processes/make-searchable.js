@@ -2,7 +2,7 @@ import autocracy from './../autocracy.js'
 
 function initialise(origin, destination, forceOCR, verbose, alert) {
     const cacheUntagged = '.autocracy-cache/untagged'
-    const cacheJpegPages = '.autocracy-cache/jpeg-pages'
+    const cacheImagePages = '.autocracy-cache/image-pages'
     const cachePDFPages = '.autocracy-cache/pdf-pages'
     const operations = [
         !forceOCR && {
@@ -28,13 +28,13 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
             )
         },
         {
-            name: forceOCR ? 'Converting PDFs to JPEG pages' : 'Converting untagged PDFs to JPEG pages',
-            setup: () => autocracy.operations.convertPDFToJpegPages(
+            name: forceOCR ? 'Converting PDFs to image pages' : 'Converting untagged PDFs to image pages',
+            setup: () => autocracy.operations.convertPDFToImagePages(
                 forceOCR ? origin : cacheUntagged,
-                cacheJpegPages,
+                cacheImagePages,
                 {
                     ...forceOCR ? {} : { originInitial: origin },
-                    method: 'shell',
+                    method: 'library',
                     density: 300
                 },
                 verbose,
@@ -42,9 +42,9 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
             )
         },
         {
-            name: 'Converting JPEG pages to PDF pages',
-            setup: () => autocracy.operations.convertJpegPagesToPDFPages(
-                cacheJpegPages,
+            name: 'Converting image pages to PDF pages',
+            setup: () => autocracy.operations.convertImagePagesToPDFPages(
+                cacheImagePages,
                 cachePDFPages,
                 {
                     originInitial: origin,

@@ -72,7 +72,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
 
     async function write(item) {
         if (item.skip) return item
-        await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'txt')}`, item.text)
+        await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/png$/, 'txt')}`, item.text)
         return item
     }
 
@@ -85,7 +85,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }
         const converter = await converters[options.method]()
         const convert = async item => {
-            const outputExists = await FSExtra.exists(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'txt')}`)
+            const outputExists = await FSExtra.exists(`${destination}/${item.root}/${item.pagefile.replace(/png$/, 'txt')}`)
             if (outputExists) return { ...item, skip: true } // already exists, skip
             const inputExists = await FSExtra.exists(`${origin}/${item.root}`)
             if (!inputExists) return { item, skip: true } // no input, skip

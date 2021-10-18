@@ -67,18 +67,18 @@ async function setup() {
             .positional('intermediate', { type: 'string', describe: 'Intermediate directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
     })
-    instructions.command('convert-pdf-to-jpeg-pages', false, args => {
+    instructions.command('convert-pdf-to-image-pages', false, args => {
         args
-            .usage('Usage: autocracy convert-pdf-to-jpeg-pages <origin> <destination>')
+            .usage('Usage: autocracy convert-pdf-to-image-pages <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
-            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['shell'], default: 'shell' })
+            .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'library' })
             .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
     })
-    instructions.command('convert-jpeg-pages-to-text-pages', false, args => {
+    instructions.command('convert-image-pages-to-text-pages', false, args => {
         args
-            .usage('Usage: autocracy convert-jpeg-pages-to-text-pages <origin> <destination>')
+            .usage('Usage: autocracy convert-image-pages-to-text-pages <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -86,9 +86,9 @@ async function setup() {
             .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find (not used by AWS)', default: 'eng' })
             .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
     })
-    instructions.command('convert-jpeg-pages-to-pdf-pages', false, args => {
+    instructions.command('convert-image-pages-to-pdf-pages', false, args => {
         args
-            .usage('Usage: autocracy convert-jpeg-pages-to-pdf-pages <origin> <destination>')
+            .usage('Usage: autocracy convert-image-pages-to-pdf-pages <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -126,7 +126,7 @@ async function setup() {
                 await previous
                 const process = await procedure.setup()
                 const total = await process.length()
-                await process.run().each(ticker(`${procedure.name}...`.padEnd(41, ' '), total)).whenEnd()
+                await process.run().each(ticker(`${procedure.name}...`.padEnd(42, ' '), total)).whenEnd()
                 return
             }, Promise.resolve())
         }
@@ -142,7 +142,7 @@ async function setup() {
                 await previous
                 const process = await procedure.setup()
                 const total = await process.length()
-                await process.run().each(ticker(`${procedure.name}...`.padEnd(41, ' '), total)).whenEnd()
+                await process.run().each(ticker(`${procedure.name}...`.padEnd(42, ' '), total)).whenEnd()
                 return
             }, Promise.resolve())
         }
@@ -178,7 +178,7 @@ async function setup() {
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
-        else if (command === 'convert-pdf-to-jpeg-pages') {
+        else if (command === 'convert-pdf-to-image-pages') {
             const {
                 _: [, origin, destination],
                 method,
@@ -186,11 +186,11 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertPDFToJpegPages(origin, destination, { method, density }, verbose, alert)
+            const process = await autocracy.operations.convertPDFToImagePages(origin, destination, { method, density }, verbose, alert)
             const total = await process.length()
             process.run().each(ticker('Working...', total))
         }
-        else if (command === 'convert-jpeg-pages-to-text-pages') {
+        else if (command === 'convert-image-pages-to-text-pages') {
             const {
                 _: [, origin, destination],
                 method,
@@ -199,12 +199,12 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertJpegPagesToTextPages(origin, destination, { method, language, density }, verbose, alert)
+            const process = await autocracy.operations.convertImagePagesToTextPages(origin, destination, { method, language, density }, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()
         }
-        else if (command === 'convert-jpeg-pages-to-pdf-pages') {
+        else if (command === 'convert-image-pages-to-pdf-pages') {
             const {
                 _: [, origin, destination],
                 method,
@@ -213,7 +213,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertJpegPagesToPDFPages(origin, destination, { method, language, density }, verbose, alert)
+            const process = await autocracy.operations.convertImagePagesToPDFPages(origin, destination, { method, language, density }, verbose, alert)
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
             await process.terminate()

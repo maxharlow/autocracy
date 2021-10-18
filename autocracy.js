@@ -3,9 +3,9 @@ import makeSearchable from './processes/make-searchable.js'
 import extractPDFToText from './operations/extract-pdf-to-text.js'
 import copyPDFTagged from './operations/copy-pdf-tagged.js'
 import symlinkMissing from './operations/symlink-missing.js'
-import convertPDFToJpegPages from './operations/convert-pdf-to-jpeg-pages.js'
-import convertJpegPagesToTextPages from './operations/convert-jpeg-pages-to-text-pages.js'
-import convertJpegPagesToPDFPages from './operations/convert-jpeg-pages-to-pdf-pages.js'
+import convertPDFToImagePages from './operations/convert-pdf-to-image-pages.js'
+import convertImagePagesToTextPages from './operations/convert-image-pages-to-text-pages.js'
+import convertImagePagesToPDFPages from './operations/convert-image-pages-to-pdf-pages.js'
 import combineTextPages from './operations/combine-text-pages.js'
 import combinePDFPages from './operations/combine-pdf-pages.js'
 
@@ -16,9 +16,9 @@ export default {
         extractPDFToText,
         copyPDFTagged,
         symlinkMissing,
-        convertPDFToJpegPages,
-        convertJpegPagesToTextPages,
-        convertJpegPagesToPDFPages,
+        convertPDFToImagePages,
+        convertImagePagesToTextPages,
+        convertImagePagesToPDFPages,
         combineTextPages,
         combinePDFPages
     }

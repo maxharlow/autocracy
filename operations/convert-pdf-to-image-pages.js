@@ -4,19 +4,39 @@ import Scramjet from 'scramjet'
 import * as Globby from 'globby'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
+import MuPDF from 'mupdf-js'
 
-async function initialise(origin, destination, options = { method: 'shell', density: 300 }, verbose, alert) {
+async function initialise(origin, destination, options = { method: 'library', density: 300 }, verbose, alert) {
 
     async function converterShell(destination) {
-        const isInstalled = await Lookpath.lookpath('magick')
-        const isInstalledLegacy = await Lookpath.lookpath('convert')
-        if (!isInstalled && !isInstalledLegacy) throw new Error('ImageMagick not found!')
-        const executable = !isInstalled ? 'convert' : 'magick convert'
+        const isInstalled = await Lookpath.lookpath('mutool')
+        if (!isInstalled) throw new Error('MuPDF not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `${executable} -density ${options.density} "pdf:${origin}/${item.root}" "${destination}/${item.root}/page-%04d.jpeg"`
+            const command = `mutool draw -r ${options.density} -o "${destination}/${item.root}/page-%04d.png" "${origin}/${item.root}"`
             if (verbose) alert(command)
             await execute(command)
+        }
+        return { run }
+    }
+
+    async function converterLibrary(destination) {
+        const run = async item => {
+            const consoleWarn = console.warn // suppress MuPDF messages
+            console.warn = () => {} // suppress MuPDF messages
+            const processor = await MuPDF.createMuPdf()
+            console.warn = consoleWarn // suppress MuPDF messages
+            const documentData = await FSExtra.readFile(`${origin}/${item.root}`)
+            const document = processor.load(documentData)
+            const pages = processor.countPages(document)
+            const pagesOutput = Array.from({ length: pages }).map((_, page) => {
+                const pagePadded = page.toString().padStart(4, '0')
+                const imageData = processor.drawPageAsPNG(document, page + 1, options.density)
+                const image = Buffer.from(imageData.split(',').pop(), 'base64')
+                return FSExtra.writeFile(`${destination}/${item.root}/page-${pagePadded}.png`, image)
+            })
+            await Promise.all(pagesOutput)
+            return item
         }
         return { run }
     }
@@ -24,7 +44,8 @@ async function initialise(origin, destination, options = { method: 'shell', dens
     async function setup() {
         await FSExtra.ensureDir(destination)
         const converters = {
-            shell: converterShell
+            shell: converterShell,
+            library: converterLibrary
         }
         const converter = await converters[options.method](destination)
         const convert = async item => {

@@ -25,7 +25,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
 
     async function write(item) {
         if (item.skip) return item
-        await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'pdf')}`, item.data)
+        await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/png$/, 'pdf')}`, item.data)
         return item
     }
 

@@ -4,32 +4,18 @@ import Scramjet from 'scramjet'
 import * as Globby from 'globby'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
-import PDF2Json from 'pdf2json'
 
 async function initialise(origin, destination, options = { method: 'shell' }, verbose, alert) {
 
     async function extractorShell() {
-        const isInstalled = await Lookpath.lookpath('pdftotext')
-        if (!isInstalled) throw new Error('Poppler not found!')
+        const isInstalled = await Lookpath.lookpath('mutool')
+        if (!isInstalled) throw new Error('MuPDF not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `pdftotext "${origin}/${item.root}" -`
+            const command = `mutool draw -F txt "${origin}/${item.root}"`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout
-        }
-        return { run }
-    }
-
-    async function extractorLibrary() {
-        const run = async item => {
-            const parser = new PDF2Json(null, true)
-            const result = await new Promise((resolve, reject) => {
-                parser.on('pdfParser_dataError', reject)
-                parser.on('pdfParser_dataReady', () => resolve(parser.getRawTextContent()))
-                parser.loadPDF(`${origin}/${item.root}`)
-            })
-            return result
         }
         return { run }
     }
@@ -44,8 +30,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
     async function setup() {
         await FSExtra.ensureDir(destination)
         const extractors = {
-            shell: extractorShell,
-            library: extractorLibrary
+            shell: extractorShell
         }
         const extractor = await extractors[options.method](destination)
         const extract = async item => {

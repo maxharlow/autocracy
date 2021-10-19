@@ -29,6 +29,7 @@ async function initialise(origin, destination, options = { method: 'library', de
             const documentData = await FSExtra.readFile(`${origin}/${item.name}`)
             const document = processor.load(documentData)
             const pages = processor.countPages(document)
+            if (verbose) alert(`Converting ${item.name} (${pages} pages)...`)
             const pagesOutput = Array.from({ length: pages }).map((_, page) => {
                 const pagePadded = page.toString().padStart(4, '0')
                 const imageData = processor.drawPageAsPNG(document, page + 1, options.density)

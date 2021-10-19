@@ -3,6 +3,7 @@ import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import * as Globby from 'globby'
 import Lookpath from 'lookpath'
+import Tempy from 'tempy'
 import ChildProcess from 'child_process'
 import MuPDF from 'mupdf-js'
 
@@ -13,10 +14,11 @@ async function initialise(origin, destination, options = { method: 'library', de
         if (!isInstalled) throw new Error('MuPDF not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            await FSExtra.mkdir(`${destination}/${item.name}`)
-            const command = `mutool draw -r ${options.density} -o "${destination}/${item.name}/page-%04d.png" "${origin}/${item.name}"`
+            const output = Tempy.directory()
+            const command = `mutool draw -r ${options.density} -o "${output}/page-%04d.png" "${origin}/${item.name}"`
             if (verbose) alert(command)
             await execute(command)
+            await FSExtra.move(output, `${destination}/${item.name}`)
         }
         return { run }
     }

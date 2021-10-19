@@ -126,8 +126,7 @@ async function setup() {
                 await previous
                 const process = await procedure.setup()
                 const total = await process.length()
-                await process.run().each(ticker(`${procedure.name}...`.padEnd(42, ' '), total)).whenEnd()
-                return
+                return process.run().each(ticker(`${procedure.name}...`.padEnd(42, ' '), total)).whenEnd()
             }, Promise.resolve())
         }
         else if (command === 'make-searchable') {
@@ -142,8 +141,7 @@ async function setup() {
                 await previous
                 const process = await procedure.setup()
                 const total = await process.length()
-                await process.run().each(ticker(`${procedure.name}...`.padEnd(42, ' '), total)).whenEnd()
-                return
+                return process.run().each(ticker(`${procedure.name}...`.padEnd(42, ' '), total)).whenEnd()
             }, Promise.resolve())
         }
         else if (command === 'extract-pdf-to-text') {

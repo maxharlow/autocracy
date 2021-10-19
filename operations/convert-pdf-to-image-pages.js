@@ -19,6 +19,7 @@ async function initialise(origin, destination, options = { method: 'library', de
             if (verbose) alert(command)
             await execute(command)
             await FSExtra.move(output, `${destination}/${item.name}`)
+            return item
         }
         return { run }
     }

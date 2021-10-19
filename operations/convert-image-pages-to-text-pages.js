@@ -104,6 +104,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }
         const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
             objectMode: true,
+            onlyFiles: false,
             deep: 1
         })
         const source = () => Scramjet.DataStream.from(sourceGenerator()).flatMap(async file => {

@@ -21,11 +21,11 @@ async function initialise(origin, destination, options = { method: 'library', de
     }
 
     async function converterLibrary(destination) {
+        const consoleWarn = console.warn // suppress MuPDF messages
+        console.warn = () => {} // suppress MuPDF messages
+        const processor = await MuPDF.createMuPdf()
+        console.warn = consoleWarn // suppress MuPDF messages
         const run = async item => {
-            const consoleWarn = console.warn // suppress MuPDF messages
-            console.warn = () => {} // suppress MuPDF messages
-            const processor = await MuPDF.createMuPdf()
-            console.warn = consoleWarn // suppress MuPDF messages
             const documentData = await FSExtra.readFile(`${origin}/${item.name}`)
             const document = processor.load(documentData)
             const pages = processor.countPages(document)

@@ -201,7 +201,7 @@ async function setup() {
             console.error('Starting up...')
             const process = await autocracy.operations.convertImagePagesToTextPages(origin, destination, { method, language, density }, verbose, alert)
             const total = await process.length()
-            await process.run().each(ticker('Working...', total))
+            await process.run().each(ticker('Working...', total)).whenEnd()
             await process.terminate()
         }
         else if (command === 'convert-image-pages-to-pdf-pages') {
@@ -215,7 +215,7 @@ async function setup() {
             console.error('Starting up...')
             const process = await autocracy.operations.convertImagePagesToPDFPages(origin, destination, { method, language, density }, verbose, alert)
             const total = await process.length()
-            await process.run().each(ticker('Working...', total))
+            await process.run().each(ticker('Working...', total)).whenEnd()
             await process.terminate()
         }
         else if (command === 'combine-text-pages') {

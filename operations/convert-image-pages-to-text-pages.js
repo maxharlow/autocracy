@@ -26,22 +26,23 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }
     }
 
-    async function converterLibrary() { // todo -- this doesn't work
-        const parallel = OS.cpus().length * 2 // Scramjet default
+    async function converterLibrary() {
         const scheduler = Tesseract.createScheduler()
-        await Array.from({ length: parallel }).reduce(async previous => {
+        await Array.from({ length: OS.cpus().length }).reduce(async previous => {
             await previous
             const worker = Tesseract.createWorker()
             await worker.load()
             await worker.loadLanguage(options.language)
             await worker.initialize(options.language)
             await worker.setParameters({
+                tessjs_create_hocr: false,
+                tessjs_create_tsv: false,
                 user_defined_dpi: options.density,
                 tessedit_pageseg_mode: Tesseract.PSM.PSM_SPARSE_TEXT
             })
             scheduler.addWorker(worker)
-            return
-        })
+        }, Promise.resolve())
+        if (verbose) alert('Tesseract worker setup complete')
         const run = async item => {
             const output = await scheduler.addJob('recognize', `${origin}/${item.root}/${item.pagefile}`)
             return output.data.text

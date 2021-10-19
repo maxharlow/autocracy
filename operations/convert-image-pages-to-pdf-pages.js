@@ -1,9 +1,11 @@
+import OS from 'os'
 import Util from 'util'
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import * as Globby from 'globby'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
+import Tesseract from 'tesseract.js'
 
 async function initialise(origin, destination, options = { method: 'shell', language: 'eng', density: 300 }, verbose, alert) {
 
@@ -23,6 +25,34 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }
     }
 
+    async function converterLibrary() {
+        const scheduler = Tesseract.createScheduler()
+        await Array.from({ length: OS.cpus().length }).reduce(async previous => {
+            await previous
+            const worker = Tesseract.createWorker()
+            await worker.load()
+            await worker.loadLanguage(options.language)
+            await worker.initialize(options.language)
+            await worker.setParameters({
+                tessjs_create_hocr: false,
+                tessjs_create_tsv: false,
+                user_defined_dpi: options.density,
+                tessedit_pageseg_mode: Tesseract.PSM.PSM_SPARSE_TEXT
+            })
+            scheduler.addWorker(worker)
+        }, Promise.resolve())
+        if (verbose) alert('Tesseract worker setup complete')
+        const run = async item => {
+            await scheduler.addJob('recognize', `${origin}/${item.root}/${item.pagefile}`)
+            const output = await scheduler.addJob('getPDF', `${origin}/${item.root}/${item.pagefile}`)
+            return Buffer.from(output.data)
+        }
+        return {
+            run,
+            terminate: scheduler.terminate
+        }
+    }
+
     async function write(item) {
         if (item.skip) return item
         await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/png$/, 'pdf')}`, item.data)
@@ -32,7 +62,8 @@ async function initialise(origin, destination, options = { method: 'shell', lang
     async function setup() {
         await FSExtra.ensureDir(destination)
         const converters = {
-            shell: converterShell
+            shell: converterShell,
+            library: converterLibrary
         }
         const converter = await converters[options.method]()
         const convert = async item => {

@@ -15,7 +15,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${origin}/${item.root}/${item.pagefile}" -`
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${origin}/${item.name}/${item.pagefile}" -`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout
@@ -44,7 +44,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }, Promise.resolve())
         if (verbose) alert('Tesseract worker setup complete')
         const run = async item => {
-            const output = await scheduler.addJob('recognize', `${origin}/${item.root}/${item.pagefile}`)
+            const output = await scheduler.addJob('recognize', `${origin}/${item.name}/${item.pagefile}`)
             return output.data.text
         }
         return {
@@ -58,7 +58,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         const run = async item => {
             const detect = new AWSTextract.DetectDocumentTextCommand({
                 Document: {
-                    Bytes: await FSExtra.readFile(`${origin}/${item.root}/${item.pagefile}`)
+                    Bytes: await FSExtra.readFile(`${origin}/${item.name}/${item.pagefile}`)
                 }
             })
             const response = await textract.send(detect)
@@ -73,7 +73,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
 
     async function write(item) {
         if (item.skip) return item
-        await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/png$/, 'txt')}`, item.text)
+        await FSExtra.writeFile(`${destination}/${item.name}/${item.pagefile.replace(/png$/, 'txt')}`, item.text)
         return item
     }
 
@@ -86,11 +86,11 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }
         const converter = await converters[options.method]()
         const convert = async item => {
-            const outputExists = await FSExtra.exists(`${destination}/${item.root}/${item.pagefile.replace(/png$/, 'txt')}`)
+            const outputExists = await FSExtra.exists(`${destination}/${item.name}/${item.pagefile.replace(/png$/, 'txt')}`)
             if (outputExists) return { ...item, skip: true } // already exists, skip
-            const inputExists = await FSExtra.exists(`${origin}/${item.root}`)
+            const inputExists = await FSExtra.exists(`${origin}/${item.name}`)
             if (!inputExists) return { item, skip: true } // no input, skip
-            await FSExtra.ensureDir(`${destination}/${item.root}`)
+            await FSExtra.ensureDir(`${destination}/${item.name}`)
             try {
                 const result = await converter.run(item)
                 const text = result.replace(/\s+/g, ' ')
@@ -98,7 +98,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             }
             catch (e) {
                 console.error(`Error: ${e.message} (retrying...)`)
-                await FSExtra.remove(`${destination}/${item.root}`) // so we don't trigger the exists check and skip
+                await FSExtra.remove(`${destination}/${item.name}`) // so we don't trigger the exists check and skip
                 if (verbose) console.error(e.stack)
                 return convert(item)
             }
@@ -112,7 +112,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             const pages = await Globby.globby(`${origin}/${file.name}/*`, { objectMode: true })
             return pages.map(pagefile => {
                 return {
-                    root: file.name,
+                    name: file.name,
                     pagefile: pagefile.name
                 }
             })

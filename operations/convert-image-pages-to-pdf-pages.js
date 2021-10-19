@@ -14,7 +14,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${origin}/${item.root}/${item.pagefile}" - pdf`
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${origin}/${item.name}/${item.pagefile}" - pdf`
             if (verbose) alert(command)
             const result = await execute(command, { encoding: 'binary', maxBuffer: 2 * 1024 * 1024 * 1024 }) // 2GB
             return Buffer.from(result.stdout, 'binary')
@@ -43,8 +43,8 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }, Promise.resolve())
         if (verbose) alert('Tesseract worker setup complete')
         const run = async item => {
-            await scheduler.addJob('recognize', `${origin}/${item.root}/${item.pagefile}`)
-            const output = await scheduler.addJob('getPDF', `${origin}/${item.root}/${item.pagefile}`)
+            await scheduler.addJob('recognize', `${origin}/${item.name}/${item.pagefile}`)
+            const output = await scheduler.addJob('getPDF', `${origin}/${item.name}/${item.pagefile}`)
             return Buffer.from(output.data)
         }
         return {
@@ -55,7 +55,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
 
     async function write(item) {
         if (item.skip) return item
-        await FSExtra.writeFile(`${destination}/${item.root}/${item.pagefile.replace(/png$/, 'pdf')}`, item.data)
+        await FSExtra.writeFile(`${destination}/${item.name}/${item.pagefile.replace(/png$/, 'pdf')}`, item.data)
         return item
     }
 
@@ -67,18 +67,18 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }
         const converter = await converters[options.method]()
         const convert = async item => {
-            const outputExists = await FSExtra.exists(`${destination}/${item.root}/${item.pagefile.replace(/jpeg$/, 'pdf')}`)
+            const outputExists = await FSExtra.exists(`${destination}/${item.name}/${item.pagefile.replace(/jpeg$/, 'pdf')}`)
             if (outputExists) return { item, skip: true } // already exists, skip
-            const inputExists = await FSExtra.exists(`${origin}/${item.root}`)
+            const inputExists = await FSExtra.exists(`${origin}/${item.name}`)
             if (!inputExists) return { item, skip: true } // no input, skip
-            await FSExtra.ensureDir(`${destination}/${item.root}`)
+            await FSExtra.ensureDir(`${destination}/${item.name}`)
             try {
                 const data = await converter.run(item)
                 return { ...item, data }
             }
             catch (e) {
                 console.error(`Error: ${e.message} (retrying...)`)
-                await FSExtra.remove(`${destination}/${item.root}`) // so we don't trigger the exists check and skip
+                await FSExtra.remove(`${destination}/${item.name}`) // so we don't trigger the exists check and skip
                 if (verbose) console.error(e.stack)
                 return convert(item)
             }
@@ -92,7 +92,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             const pages = await Globby.globby(`${origin}/${file.name}/*`, { objectMode: true })
             return pages.map(pagefile => {
                 return {
-                    root: file.name,
+                    name: file.name,
                     pagefile: pagefile.name
                 }
             })

@@ -5,28 +5,28 @@ import * as Globby from 'globby'
 async function initialise(origin, destination, options = {}, verbose, alert) {
 
     async function listing(item) {
-        const pages = await Globby.globby(`${origin}/${item.root}`)
+        const pages = await Globby.globby(`${origin}/${item.name}`)
         if (pages.length === 0) return { item, skip: true } // no pages found to combine, skip
         return {
-            root: item.root,
+            name: item.name,
             pages
         }
     }
 
     async function read(item) {
         if (item.skip) return item
-        const outputExists = await FSExtra.exists(`${destination}/${item.root}`)
+        const outputExists = await FSExtra.exists(`${destination}/${item.name}`)
         if (outputExists) return { item, skip: true } // already exists, skip
         const texts = await Promise.all(item.pages.map(file => FSExtra.readFile(file, 'utf8')))
         return {
-            root: item.root,
+            name: item.name,
             text: texts.join(' ')
         }
     }
 
     async function write(item) {
         if (item.skip) return item
-        await FSExtra.writeFile(`${destination}/${item.root}`, item.text)
+        await FSExtra.writeFile(`${destination}/${item.name}`, item.text)
         return item
     }
 
@@ -38,7 +38,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
         })
         const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
             return {
-                root: file.name
+                name: file.name
             }
         })
         const length = () => source().reduce(a => a + 1, 0)

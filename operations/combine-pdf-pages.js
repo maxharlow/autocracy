@@ -9,10 +9,10 @@ import ChildProcess from 'child_process'
 async function initialise(origin, destination, options = { method: 'shell' }, verbose, alert) {
 
     async function listing(item) {
-        const pages = await Globby.globby(`${origin}/${item.root}`)
+        const pages = await Globby.globby(`${origin}/${item.name}`)
         if (pages.length === 0) return { item, skip: true } // no pages found to combine, skip
         return {
-            root: item.root,
+            name: item.name,
             pages
         }
     }
@@ -37,7 +37,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
 
     async function write(item)  {
         if (item.skip) return item
-        await FSExtra.writeFile(`${destination}/${item.root}`, item.data)
+        await FSExtra.writeFile(`${destination}/${item.name}`, item.data)
         return item
     }
 
@@ -48,9 +48,9 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         }
         const combiner = await combiners[options.method](destination)
         const combine = async item => {
-            const outputExists = await FSExtra.exists(`${destination}/${item.root}`)
+            const outputExists = await FSExtra.exists(`${destination}/${item.name}`)
             if (outputExists) return { item, skip: true } // already exists, skip
-            const inputExists = await FSExtra.exists(`${origin}/${item.root}`)
+            const inputExists = await FSExtra.exists(`${origin}/${item.name}`)
             if (!inputExists) return { item, skip: true } // no input, skip
             try {
                 const data = await combiner.run(item)
@@ -68,7 +68,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         })
         const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
             return {
-                root: file.name
+                name: file.name
             }
         })
         const length = () => source().reduce(a => a + 1, 0)

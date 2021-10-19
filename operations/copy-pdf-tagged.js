@@ -12,7 +12,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         if (!isInstalled) throw new Error('MuPDF not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `mutool draw -F txt "${origin}/${item.root}"`
+            const command = `mutool draw -F txt "${origin}/${item.name}"`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout.trim() !== ''
@@ -27,8 +27,8 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         const detector = await detectors[options.method]()
         const isTagged = await detector.run(item)
         if (isTagged) {
-            const copyFrom = `${origin}/${item.root}`
-            const copyTo = `${destination}/${item.root}`
+            const copyFrom = `${origin}/${item.name}`
+            const copyTo = `${destination}/${item.name}`
             if (verbose) alert(`Copying ${copyFrom} to ${copyTo}...`)
             await FSExtra.copy(copyFrom, copyTo)
         }
@@ -43,7 +43,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         })
         const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
             return {
-                root: file.name
+                name: file.name
             }
         })
         const length = () => source().reduce(a => a + 1, 0)

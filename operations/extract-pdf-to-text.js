@@ -12,7 +12,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         if (!isInstalled) throw new Error('MuPDF not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `mutool draw -F txt "${origin}/${item.root}"`
+            const command = `mutool draw -F txt "${origin}/${item.name}"`
             if (verbose) alert(command)
             const result = await execute(command)
             return result.stdout
@@ -23,7 +23,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
     async function write(item) {
         if (item.skip) return item
         if (item.text.trim() === '') return item // don't write empty files
-        await FSExtra.writeFile(`${destination}/${item.root}`, item.text)
+        await FSExtra.writeFile(`${destination}/${item.name}`, item.text)
         return item
     }
 
@@ -34,7 +34,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         }
         const extractor = await extractors[options.method](destination)
         const extract = async item => {
-            const path = `${destination}/${item.root}`
+            const path = `${destination}/${item.name}`
             const outputExists = await FSExtra.exists(path)
             if (outputExists) return { item, skip: true } // already exists, skip
             try {
@@ -54,7 +54,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         })
         const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
             return {
-                root: file.name
+                name: file.name
             }
         })
         const length = () => source().reduce(a => a + 1, 0)

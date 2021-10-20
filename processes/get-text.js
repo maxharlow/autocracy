@@ -34,7 +34,7 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
                 cacheImagePages,
                 {
                     ...forceOCR ? {} : { originInitial: origin },
-                    method: 'library',
+                    method: 'shell',
                     density: 300
                 },
                 verbose,

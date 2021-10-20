@@ -34,14 +34,15 @@ async function initialise(origin, destination, options = { method: 'library', de
             const document = processor.load(documentData)
             const pages = processor.countPages(document)
             if (verbose) alert(`Converting ${item.name} (${pages} pages)...`)
+            const output = Tempy.directory()
             const pagesOutput = Array.from({ length: pages }).map(async (_, page) => {
                 const pagePadded = page.toString().padStart(4, '0')
                 const imageData = processor.drawPageAsPNG(document, page + 1, options.density)
                 const image = Buffer.from(imageData.split(',').pop(), 'base64')
-                if (page === 0) await FSExtra.mkdir(`${destination}/${item.name}`)
-                return FSExtra.writeFile(`${destination}/${item.name}/page-${pagePadded}.png`, image)
+                return FSExtra.writeFile(`${output}/page-${pagePadded}.png`, image)
             })
             await Promise.all(pagesOutput)
+            await FSExtra.move(output, `${destination}/${item.name}`)
             return item
         }
         return { run }

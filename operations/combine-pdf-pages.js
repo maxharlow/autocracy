@@ -15,8 +15,8 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             output: item.output,
             message: 'combining...'
         })
-        const pages = await Globby.globby(item.input)
-        if (pages.length === 0) {
+        const pagesUnsorted = await Globby.globby(item.input)
+        if (pagesUnsorted.length === 0) {
             if (verbose) alert({
                 operation: 'combine-pdf-pages',
                 input: item.input,
@@ -25,6 +25,9 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             })
             return { item, skip: true } // no pages found to combine, skip
         }
+        const pages = pagesUnsorted.sort((a, b) => {
+            return Number(a.replace(/[^0-9]/g, '')) - Number(b.replace(/[^0-9]/g, ''))
+        })
         return { ...item, pages }
     }
 

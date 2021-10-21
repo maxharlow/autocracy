@@ -15,7 +15,7 @@ async function initialise(origin, destination, options = { method: 'shell', dens
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
             const output = Tempy.directory()
-            const command = `mutool draw -r ${options.density} -o "${output}/page-%04d.png" "${item.input}"`
+            const command = `mutool draw -r ${options.density} -o "${output}/page-%d.png" "${item.input}"`
             await execute(command)
             await FSExtra.move(output, `${item.output}`)
             if (verbose) alert({
@@ -40,7 +40,6 @@ async function initialise(origin, destination, options = { method: 'shell', dens
             const pages = processor.countPages(document)
             const output = Tempy.directory()
             const pagesOutput = Array.from({ length: pages }).map(async (_, page) => {
-                const pagePadded = page.toString().padStart(4, '0')
                 if (verbose) alert({
                     operation: 'convert-pdf-to-image-pages',
                     input: item.input,
@@ -49,7 +48,7 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                 })
                 const imageData = processor.drawPageAsPNG(document, page + 1, options.density)
                 const image = Buffer.from(imageData.split(',').pop(), 'base64')
-                return FSExtra.writeFile(`${output}/page-${pagePadded}.png`, image)
+                return FSExtra.writeFile(`${output}/page-${page}.png`, image)
             })
             await Promise.all(pagesOutput)
             await FSExtra.move(output, item.output)

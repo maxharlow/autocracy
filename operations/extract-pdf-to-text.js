@@ -55,7 +55,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                     output: item.output,
                     message: 'output exists'
                 })
-                return { item, skip: true } // already exists, skip
+                return { ...item, skip: true } // already exists, skip
             }
             if (verbose) alert({
                 operation: 'extract-pdf-to-text',
@@ -90,7 +90,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             }
         })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().setOptions({ maxParallel: 1 }).map(extract).each(write)
+        const run = () => source().map(extract).map(write)
         return { run, length }
     }
 

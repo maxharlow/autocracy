@@ -19,7 +19,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
                 output: item.output,
                 message: 'no pages found'
             })
-            return { item, skip: true } // no pages found to combine, skip
+            return { ...item, skip: true } // no pages found to combine, skip
         }
         const pages = pagesUnsorted.sort((a, b) => {
             return Number(a.replace(/[^0-9]/g, '')) - Number(b.replace(/[^0-9]/g, ''))
@@ -37,7 +37,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
                 output: item.output,
                 message: 'output exists'
             })
-            return { item, skip: true } // already exists, skip
+            return { ...item, skip: true } // already exists, skip
         }
         const textPages = await Promise.all(item.pages.map(file => FSExtra.readFile(file, 'utf8')))
         const text = textPages.join(' ')
@@ -60,6 +60,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
         await FSExtra.ensureDir(destination)
         const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
             objectMode: true,
+            onlyFiles: false,
             deep: 1
         })
         const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {

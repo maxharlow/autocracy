@@ -98,7 +98,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
                     output: item.output,
                     message: 'output exists'
                 })
-                return { item, skip: true } // already exists, skip
+                return { ...item, skip: true } // already exists, skip
             }
             const inputExists = await FSExtra.exists(item.input)
             if (!inputExists) {
@@ -108,7 +108,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
                     output: item.output,
                     message: 'no input'
                 })
-                return { item, skip: true } // no input, skip
+                return { ...item, skip: true } // no input, skip
             }
             await FSExtra.ensureDir(`${destination}/${item.name}`)
             if (verbose) alert({

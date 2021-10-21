@@ -23,7 +23,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                 output: item.output,
                 message: 'no pages found'
             })
-            return { item, skip: true } // no pages found to combine, skip
+            return { ...item, skip: true } // no pages found to combine, skip
         }
         const pages = pagesUnsorted.sort((a, b) => {
             return Number(a.replace(/[^0-9]/g, '')) - Number(b.replace(/[^0-9]/g, ''))
@@ -41,9 +41,9 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             const output = Tempy.file()
             const command = `mutool merge -o ${output} ${pagesList}`
             await execute(command)
-            const result = await FSExtra.readFile(output)
+            const data = await FSExtra.readFile(output)
             await FSExtra.remove(output)
-            return result
+            return data
         }
         return { run }
     }
@@ -67,6 +67,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         }
         const combiner = await combiners[options.method](destination)
         const combine = async item => {
+            if (item.skip) return item
             const outputExists = await FSExtra.exists(item.output)
             if (outputExists) {
                 if (verbose) alert({
@@ -75,7 +76,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                     output: item.output,
                     message: 'output exists'
                 })
-                return { item, skip: true } // already exists, skip
+                return { ...item, skip: true } // already exists, skip
             }
             const inputExists = await FSExtra.exists(item.input)
             if (!inputExists) {
@@ -85,7 +86,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                     output: item.output,
                     message: 'no input'
                 })
-                return { item, skip: true } // no input, skip
+                return { ...item, skip: true } // no input, skip
             }
             if (verbose) alert({
                 operation: 'combine-pdf-pages',
@@ -109,6 +110,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         }
         const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
             objectMode: true,
+            onlyFiles: false,
             deep: 1
         })
         const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
@@ -119,7 +121,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             }
         })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().setOptions({ maxParallel: 1 }).map(listing).map(combine).each(write)
+        const run = () => source().map(listing).map(combine).map(write)
         return { run, length }
     }
 

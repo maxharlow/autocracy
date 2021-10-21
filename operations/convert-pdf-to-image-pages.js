@@ -39,14 +39,15 @@ async function initialise(origin, destination, options = { method: 'shell', dens
             const document = processor.load(documentData)
             const pages = processor.countPages(document)
             const output = Tempy.directory()
-            const pagesOutput = Array.from({ length: pages }).map(async (_, page) => {
+            const pagesOutput = Array.from({ length: pages }).map(async (_, index) => {
+                const page = index + 1
                 if (verbose) alert({
                     operation: 'convert-pdf-to-image-pages',
                     input: item.input,
                     output: item.output,
-                    message: 'converting page ${page}...'
+                    message: `converting page ${page} of ${pages}...`
                 })
-                const imageData = processor.drawPageAsPNG(document, page + 1, options.density)
+                const imageData = processor.drawPageAsPNG(document, page, options.density)
                 const image = Buffer.from(imageData.split(',').pop(), 'base64')
                 return FSExtra.writeFile(`${output}/page-${page}.png`, image)
             })
@@ -79,7 +80,7 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                     output: item.output,
                     message: 'output exists'
                 })
-                return { item, skip: true } // already exists, skip
+                return { ...item, skip: true } // already exists, skip
             }
             const inputExists = await FSExtra.exists(item.input)
             if (!inputExists) {
@@ -89,7 +90,7 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                     output: item.output,
                     message: 'no input'
                 })
-                return { item, skip: true } // no input, skip
+                return { ...item, skip: true } // no input, skip
             }
             if (verbose) alert({
                 operation: 'convert-pdf-to-image-pages',
@@ -98,8 +99,7 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                 message: 'converting...'
             })
             try {
-                await converter.run(item)
-                return item
+                return converter.run(item)
             }
             catch (e) {
                 alert({
@@ -108,7 +108,6 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                     output: item.output,
                     message: e.message
                 })
-                await FSExtra.remove(item.output) // so we don't trigger the exists check and skip
                 return convert(item)
             }
         }

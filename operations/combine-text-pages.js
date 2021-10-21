@@ -5,28 +5,51 @@ import * as Globby from 'globby'
 async function initialise(origin, destination, options = {}, verbose, alert) {
 
     async function listing(item) {
-        const pages = await Globby.globby(`${origin}/${item.name}`)
-        if (pages.length === 0) return { item, skip: true } // no pages found to combine, skip
-        return {
-            name: item.name,
-            pages
+        if (verbose) alert({
+            operation: 'combine-text-pages',
+            input: item.input,
+            output: item.output,
+            message: 'combining...'
+        })
+        const pages = await Globby.globby(item.input)
+        if (pages.length === 0) {
+            if (verbose) alert({
+                operation: 'combine-text-pages',
+                input: item.input,
+                output: item.output,
+                message: 'no pages found'
+            })
+            return { item, skip: true } // no pages found to combine, skip
         }
+        return { ...item, pages }
     }
 
     async function read(item) {
         if (item.skip) return item
-        const outputExists = await FSExtra.exists(`${destination}/${item.name}`)
-        if (outputExists) return { item, skip: true } // already exists, skip
-        const texts = await Promise.all(item.pages.map(file => FSExtra.readFile(file, 'utf8')))
-        return {
-            name: item.name,
-            text: texts.join(' ')
+        const outputExists = await FSExtra.exists(item.output)
+        if (outputExists) {
+            if (verbose) alert({
+                operation: 'combine-text-pages',
+                input: item.input,
+                output: item.output,
+                message: 'output exists'
+            })
+            return { item, skip: true } // already exists, skip
         }
+        const textPages = await Promise.all(item.pages.map(file => FSExtra.readFile(file, 'utf8')))
+        const text = textPages.join(' ')
+        return { ...item, text }
     }
 
     async function write(item) {
         if (item.skip) return item
-        await FSExtra.writeFile(`${destination}/${item.name}`, item.text)
+        await FSExtra.writeFile(item.output, item.text)
+        if (verbose) alert({
+            operation: 'combine-text-pages',
+            input: item.input,
+            output: item.output,
+            message: 'done'
+        })
         return item
     }
 
@@ -38,7 +61,9 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
         })
         const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
             return {
-                name: file.name
+                name: file.name,
+                input: `${origin}/${file.name}`,
+                output: `${destination}/${file.name}`
             }
         })
         const length = () => source().reduce(a => a + 1, 0)

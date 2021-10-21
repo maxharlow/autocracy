@@ -14,8 +14,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${origin}/${item.name}/${item.pagefile}" - pdf`
-            if (verbose) alert(command)
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${item.input}" - pdf`
             const result = await execute(command, { encoding: 'binary', maxBuffer: 2 * 1024 * 1024 * 1024 }) // 2GB
             return Buffer.from(result.stdout, 'binary')
         }
@@ -41,10 +40,9 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             })
             scheduler.addWorker(worker)
         }, Promise.resolve())
-        if (verbose) alert('Tesseract worker setup complete')
         const run = async item => {
-            await scheduler.addJob('recognize', `${origin}/${item.name}/${item.pagefile}`)
-            const output = await scheduler.addJob('getPDF', `${origin}/${item.name}/${item.pagefile}`)
+            await scheduler.addJob('recognize', item.input)
+            const output = await scheduler.addJob('getPDF', item.input)
             return Buffer.from(output.data)
         }
         return {
@@ -55,7 +53,13 @@ async function initialise(origin, destination, options = { method: 'shell', lang
 
     async function write(item) {
         if (item.skip) return item
-        await FSExtra.writeFile(`${destination}/${item.name}/${item.pagefile.replace(/png$/, 'pdf')}`, item.data)
+        await FSExtra.writeFile(item.output, item.data)
+        if (verbose) alert({
+            operation: 'convert-image-pages-to-pdf-pages',
+            input: item.input,
+            output: item.output,
+            message: 'done'
+        })
         return item
     }
 
@@ -67,19 +71,44 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }
         const converter = await converters[options.method]()
         const convert = async item => {
-            const outputExists = await FSExtra.exists(`${destination}/${item.name}/${item.pagefile.replace(/jpeg$/, 'pdf')}`)
-            if (outputExists) return { item, skip: true } // already exists, skip
-            const inputExists = await FSExtra.exists(`${origin}/${item.name}`)
-            if (!inputExists) return { item, skip: true } // no input, skip
+            const outputExists = await FSExtra.exists(item.output)
+            if (outputExists) {
+                if (verbose) alert({
+                    operation: 'convert-image-pages-to-pdf-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: 'output exists'
+                })
+                return { item, skip: true } // already exists, skip
+            }
+            const inputExists = await FSExtra.exists(item.input)
+            if (!inputExists) {
+                if (verbose) alert({
+                    operation: 'convert-image-pages-to-pdf-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: 'no input'
+                })
+                return { item, skip: true } // no input, skip
+            }
             await FSExtra.ensureDir(`${destination}/${item.name}`)
+            if (verbose) alert({
+                operation: 'convert-image-pages-to-pdf-pages',
+                input: item.input,
+                output: item.output,
+                message: 'converting...'
+            })
             try {
                 const data = await converter.run(item)
                 return { ...item, data }
             }
             catch (e) {
-                console.error(`Error: ${e.message} (retrying...)`)
-                await FSExtra.remove(`${destination}/${item.name}`) // so we don't trigger the exists check and skip
-                if (verbose) console.error(e.stack)
+                alert({
+                    operation: 'convert-image-pages-to-pdf-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: e.message
+                })
                 return convert(item)
             }
         }
@@ -93,7 +122,8 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             return pages.map(pagefile => {
                 return {
                     name: file.name,
-                    pagefile: pagefile.name
+                    input: `${origin}/${file.name}/${pagefile.name}`,
+                    output: `${destination}/${file.name}/${pagefile.name.replace(/png$/, 'pdf')}`
                 }
             })
         })

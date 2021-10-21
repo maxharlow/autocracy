@@ -1,13 +1,28 @@
-import Readline from 'readline'
 import Process from 'process'
 import Yargs from 'yargs'
+import Chalk from 'chalk'
 import Progress from 'progress'
 import autocracy from './autocracy.js'
 
-function alert(message) {
-    Readline.clearLine(process.stderr)
-    Readline.cursorTo(process.stderr, 0)
-    console.error(message)
+function alert() {
+    let lines = {}
+    return ({ operation, input, output, message }) => {
+        const linesLength = Object.values(lines).length
+        const key = [operation, input, output].filter(x => x).join('-')
+        const elements = [
+            operation && Chalk.blue(operation),
+            input && ` ${input}`,
+            output && ` -> ${output}`,
+            (operation || input || output) && ': ',
+            message.toLowerCase().startsWith('done') ? Chalk.green(message) : message.endsWith('...') ? Chalk.yellow(message) : Chalk.magenta(message)
+        ]
+        if (Object.values(lines).length > 0) Process.stderr.moveCursor(0, -linesLength)
+        lines[key] = elements.filter(x => x).join('')
+        Object.values(lines).forEach(line => {
+            Process.stderr.clearLine()
+            Process.stderr.write(line.slice(0, Process.stderr.columns) + '\n')
+        })
+    }
 }
 
 function ticker(text, total) {
@@ -121,7 +136,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = autocracy.getText(origin, destination, forceOcr, verbose, alert)
+            const procedures = autocracy.getText(origin, destination, forceOcr, verbose, alert())
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()
@@ -136,7 +151,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = autocracy.makeSearchable(origin, destination, forceOcr, verbose, alert)
+            const procedures = autocracy.makeSearchable(origin, destination, forceOcr, verbose, alert())
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()
@@ -151,7 +166,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.extractPDFToText(origin, destination, { method }, verbose, alert)
+            const process = await autocracy.operations.extractPDFToText(origin, destination, { method }, verbose, alert())
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -162,7 +177,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.copyPDFTagged(origin, destination, { method }, verbose, alert)
+            const process = await autocracy.operations.copyPDFTagged(origin, destination, { method }, verbose, alert())
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -172,7 +187,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.symlinkMissing(origin, intermediate, destination, verbose, alert)
+            const process = await autocracy.operations.symlinkMissing(origin, intermediate, destination, verbose, alert())
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -184,7 +199,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertPDFToImagePages(origin, destination, { method, density }, verbose, alert)
+            const process = await autocracy.operations.convertPDFToImagePages(origin, destination, { method, density }, verbose, alert())
             const total = await process.length()
             process.run().each(ticker('Working...', total))
         }
@@ -197,7 +212,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertImagePagesToTextPages(origin, destination, { method, language, density }, verbose, alert)
+            const process = await autocracy.operations.convertImagePagesToTextPages(origin, destination, { method, language, density }, verbose, alert())
             const total = await process.length()
             await process.run().each(ticker('Working...', total)).whenEnd()
             await process.terminate()
@@ -211,7 +226,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertImagePagesToPDFPages(origin, destination, { method, language, density }, verbose, alert)
+            const process = await autocracy.operations.convertImagePagesToPDFPages(origin, destination, { method, language, density }, verbose, alert())
             const total = await process.length()
             await process.run().each(ticker('Working...', total)).whenEnd()
             await process.terminate()
@@ -222,7 +237,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.combineTextPages(origin, destination, {}, verbose, alert)
+            const process = await autocracy.operations.combineTextPages(origin, destination, {}, verbose, alert())
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }
@@ -233,7 +248,7 @@ async function setup() {
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.combinePDFPages(origin, destination, { method }, verbose, alert)
+            const process = await autocracy.operations.combinePDFPages(origin, destination, { method }, verbose, alert())
             const total = await process.length()
             await process.run().each(ticker('Working...', total))
         }

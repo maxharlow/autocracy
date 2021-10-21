@@ -12,8 +12,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         if (!isInstalled) throw new Error('MuPDF not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `mutool draw -F txt "${origin}/${item.name}"`
-            if (verbose) alert(command)
+            const command = `mutool draw -F txt "${item.input}"`
             const result = await execute(command)
             return result.stdout
         }
@@ -22,8 +21,22 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
 
     async function write(item) {
         if (item.skip) return item
-        if (item.text.trim() === '') return item // don't write empty files
-        await FSExtra.writeFile(`${destination}/${item.name}`, item.text)
+        if (item.text.trim() === '') {
+            if (verbose) alert({
+                operation: 'extract-pdf-to-text',
+                input: item.input,
+                output: item.output,
+                message: 'no text found'
+            })
+            return { ...item, skip: true } // don't write empty files
+        }
+        await FSExtra.writeFile(item.output, item.text)
+        if (verbose) alert({
+            operation: 'extract-pdf-to-text',
+            input: item.input,
+            output: item.output,
+            message: 'done'
+        })
         return item
     }
 
@@ -34,17 +47,34 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         }
         const extractor = await extractors[options.method](destination)
         const extract = async item => {
-            const path = `${destination}/${item.name}`
-            const outputExists = await FSExtra.exists(path)
-            if (outputExists) return { item, skip: true } // already exists, skip
+            const outputExists = await FSExtra.exists(item.output)
+            if (outputExists) {
+                if (verbose) alert({
+                    operation: 'extract-pdf-to-text',
+                    input: item.input,
+                    output: item.output,
+                    message: 'output exists'
+                })
+                return { item, skip: true } // already exists, skip
+            }
+            if (verbose) alert({
+                operation: 'extract-pdf-to-text',
+                input: item.input,
+                output: item.output,
+                message: 'extracting...'
+            })
             try {
                 const result = await extractor.run(item)
                 const text = result.replace(/\s+/g, ' ')
                 return { ...item, text }
             }
             catch (e) {
-                console.error(`Error: ${e.message} (retrying...)`)
-                if (verbose) console.error(e.stack)
+                alert({
+                    operation: 'extract-pdf-to-text',
+                    input: item.input,
+                    output: item.output,
+                    message: e.message
+                })
                 return extract(item)
             }
         }
@@ -54,7 +84,9 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         })
         const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
             return {
-                name: file.name
+                name: file.name,
+                input: `${origin}/${file.name}`,
+                output: `${destination}/${file.name}`
             }
         })
         const length = () => source().reduce(a => a + 1, 0)

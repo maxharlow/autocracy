@@ -26,9 +26,9 @@ function renderer() {
         const update = () => {
             const width = Process.stderr.columns - text.length - 8
             const proportion = tick / total
-            const barWidth = Math.round(proportion * width)
+            const barWidth = Math.floor(proportion * width)
             const bar = '█'.repeat(barWidth) + ' '.repeat(width - barWidth)
-            const percentage = `${Math.round(proportion * 100)}%`.padStart(4, ' ')
+            const percentage = `${Math.floor(proportion * 100)}%`.padStart(4, ' ')
             console.error(`${text} |${bar}| ${percentage}`)
         }
         draw(text, update, 'ticker')

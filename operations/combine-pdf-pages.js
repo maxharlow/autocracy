@@ -9,12 +9,6 @@ import ChildProcess from 'child_process'
 async function initialise(origin, destination, options = { method: 'shell' }, verbose, alert) {
 
     async function listing(item) {
-        if (verbose) alert({
-            operation: 'combine-pdf-pages',
-            input: item.input,
-            output: item.output,
-            message: 'combining...'
-        })
         const pagesUnsorted = await Globby.globby(item.input)
         if (pagesUnsorted.length === 0) {
             if (verbose) alert({
@@ -27,6 +21,12 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         }
         const pages = pagesUnsorted.sort((a, b) => {
             return Number(a.replace(/[^0-9]/g, '')) - Number(b.replace(/[^0-9]/g, ''))
+        })
+        if (verbose) alert({
+            operation: 'combine-pdf-pages',
+            input: item.input,
+            output: item.output,
+            message: `combining ${pages.length} pages...`
         })
         return { ...item, pages }
     }

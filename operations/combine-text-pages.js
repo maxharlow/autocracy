@@ -24,6 +24,12 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
         const pages = pagesUnsorted.sort((a, b) => {
             return Number(a.replace(/[^0-9]/g, '')) - Number(b.replace(/[^0-9]/g, ''))
         })
+        if (verbose) alert({
+            operation: 'combine-text-pages',
+            input: item.input,
+            output: item.output,
+            message: `combining ${pages.length} pages...`
+        })
         return { ...item, pages }
     }
 

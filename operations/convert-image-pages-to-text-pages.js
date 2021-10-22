@@ -129,7 +129,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
                     output: item.output,
                     message: e.message
                 })
-                return convert(item)
+                return { ...item, skip: true } // failed with error
             }
         }
         const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
@@ -149,8 +149,8 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => {
-            if (options.method === 'aws-textract') return source().setOptions({ maxParallel: 1 }).rate(1).map(convert).map(write)
-            return source().map(convert).map(write)
+            if (options.method === 'aws-textract') return source().setOptions({ maxParallel: 1 }).rate(1).unorder(convert).unorder(write)
+            return source().unorder(convert).unorder(write)
         }
         return { run, length, terminate: converter.terminate }
     }

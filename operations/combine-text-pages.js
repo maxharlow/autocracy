@@ -71,7 +71,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
             }
         })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().map(listing).map(read).map(write)
+        const run = () => source().unorder(listing).unorder(read).unorder(write)
         return { run, length }
     }
 

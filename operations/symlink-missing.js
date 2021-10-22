@@ -37,7 +37,7 @@ async function initialise(origin, intermediate, destination, verbose, alert) {
                 output: `${destination}/${file.name}`
             }
         })
-        const run = () => source().map(symlink)
+        const run = () => source().unorder(symlink)
         const length = () => source().reduce(a => a + 1, 0)
         return { run, length }
     }

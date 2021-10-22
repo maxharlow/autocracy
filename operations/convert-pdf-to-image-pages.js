@@ -24,7 +24,6 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                 output: item.output,
                 message: 'done'
             })
-            return item
         }
         return { run }
     }
@@ -59,7 +58,6 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                 output: item.output,
                 message: 'done'
             })
-            return item
         }
         return { run }
     }
@@ -99,7 +97,8 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                 message: 'converting...'
             })
             try {
-                return converter.run(item)
+                await converter.run(item)
+                return item
             }
             catch (e) {
                 alert({
@@ -108,7 +107,7 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                     output: item.output,
                     message: e.message
                 })
-                return convert(item)
+                return { ...item, skip: true } // failed with error
             }
         }
         const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
@@ -123,7 +122,7 @@ async function initialise(origin, destination, options = { method: 'shell', dens
             }
         })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().map(convert)
+        const run = () => source().unorder(convert)
         return { run, length }
     }
 

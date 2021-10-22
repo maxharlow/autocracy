@@ -109,7 +109,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
                     output: item.output,
                     message: e.message
                 })
-                return convert(item)
+                return { ...item, skip: true } // failed with error
             }
         }
         const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
@@ -128,7 +128,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             })
         })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().map(convert).map(write)
+        const run = () => source().unorder(convert).unorder(write)
         return { run, length, terminate: converter.terminate }
     }
 

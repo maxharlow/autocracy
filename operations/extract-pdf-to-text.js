@@ -90,7 +90,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             }
         })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().map(extract).map(write)
+        const run = () => source().unorder(extract).unorder(write)
         return { run, length }
     }
 

@@ -13,7 +13,6 @@
         "@aws-sdk/client-textract": "3.36.x",
         "chalk": "4.1.x",
         "fs-extra": "10.0.x",
-        "globby": "12.0.x",
         "lookpath": "1.2.x",
         "mupdf-js": "1.0.x",
         "scramjet": "4.36.x",

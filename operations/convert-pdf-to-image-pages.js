@@ -1,7 +1,6 @@
 import Util from 'util'
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
-import * as Globby from 'globby'
 import Lookpath from 'lookpath'
 import Tempy from 'tempy'
 import ChildProcess from 'child_process'
@@ -111,17 +110,16 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                 return { ...item, skip: true } // failed with error
             }
         }
-        const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
-            objectMode: true,
-            deep: 1
-        })
-        const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
-            return {
-                name: file.name,
-                input: `${origin}/${file.name}`,
-                output: `${destination}/${file.name}`
-            }
-        })
+        const source = () => {
+            const listing = FSExtra.opendir(options.originInitial || origin)
+            return Scramjet.DataStream.from(listing).map(file => {
+                return {
+                    name: file.name,
+                    input: `${origin}/${file.name}`,
+                    output: `${destination}/${file.name}`
+                }
+            })
+        }
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(convert)
         return { run, length }

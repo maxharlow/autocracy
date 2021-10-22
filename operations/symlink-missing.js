@@ -1,6 +1,5 @@
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
-import * as Globby from 'globby'
 
 async function initialise(origin, intermediate, destination, verbose, alert) {
 
@@ -26,17 +25,16 @@ async function initialise(origin, intermediate, destination, verbose, alert) {
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const sourceGenerator = () => Globby.globbyStream(origin, {
-            objectMode: true,
-            deep: 1
-        })
-        const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
-            return {
-                name: file.name,
-                input: `${origin}/${file.name}`,
-                output: `${destination}/${file.name}`
-            }
-        })
+        const source = () => {
+            const listing = FSExtra.opendir(origin)
+            return Scramjet.DataStream.from(listing).map(file => {
+                return {
+                    name: file.name,
+                    input: `${origin}/${file.name}`,
+                    output: `${destination}/${file.name}`
+                }
+            })
+        }
         const run = () => source().unorder(symlink)
         const length = () => source().reduce(a => a + 1, 0)
         return { run, length }

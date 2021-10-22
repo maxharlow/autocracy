@@ -2,7 +2,6 @@ import OS from 'os'
 import Util from 'util'
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
-import * as Globby from 'globby'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
@@ -133,21 +132,21 @@ async function initialise(origin, destination, options = { method: 'shell', lang
                 return { ...item, skip: true } // failed with error
             }
         }
-        const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
-            objectMode: true,
-            onlyFiles: false,
-            deep: 1
-        })
-        const source = () => Scramjet.DataStream.from(sourceGenerator()).flatMap(async file => {
-            const pages = await Globby.globby(`${origin}/${file.name}/*`, { objectMode: true })
-            return pages.map(pagefile => {
-                return {
-                    name: file.name,
-                    input: `${origin}/${file.name}/${pagefile.name}`,
-                    output: `${destination}/${file.name}/${pagefile.name.replace(/png$/, 'pdf')}`
-                }
+        const source = () => {
+            const listing = FSExtra.opendir(options.originInitial || origin)
+            return Scramjet.DataStream.from(listing).flatMap(async file => {
+                const exists = await FSExtra.exists(`${origin}/${file.name}`)
+                if (!exists) return []
+                const pages = await FSExtra.readdir(`${origin}/${file.name}`)
+                return pages.map(page => {
+                    return {
+                        name: file.name,
+                        input: `${origin}/${file.name}/${page}`,
+                        output: `${destination}/${file.name}/${page.replace(/png$/, 'txt')}`
+                    }
+                })
             })
-        })
+        }
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => {
             if (options.method === 'aws-textract') return source().setOptions({ maxParallel: 1 }).rate(1).unorder(convert).unorder(write)

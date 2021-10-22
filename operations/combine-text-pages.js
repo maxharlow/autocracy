@@ -1,6 +1,5 @@
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
-import * as Globby from 'globby'
 
 async function initialise(origin, destination, options = {}, verbose, alert) {
 
@@ -11,13 +10,24 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
             output: item.output,
             message: 'combining...'
         })
-        const pagesUnsorted = await Globby.globby(item.input)
+        const inputExists = await FSExtra.exists(item.input)
+        if (!inputExists) {
+            if (verbose) alert({
+                operation: 'combine-pdf-pages',
+                input: item.input,
+                output: item.output,
+                message: 'no input'
+            })
+            return { ...item, skip: true } // no file to combine, skip
+        }
+        const pagesUnsorted = await FSExtra.readdir(item.input)
         if (pagesUnsorted.length === 0) {
             if (verbose) alert({
                 operation: 'combine-text-pages',
                 input: item.input,
                 output: item.output,
-                message: 'no pages found'
+                message: 'no pages found',
+                isError: true
             })
             return { ...item, skip: true } // no pages found to combine, skip
         }
@@ -45,7 +55,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
             })
             return { ...item, skip: true } // already exists, skip
         }
-        const textPages = await Promise.all(item.pages.map(file => FSExtra.readFile(file, 'utf8')))
+        const textPages = await Promise.all(item.pages.map(page => FSExtra.readFile(`${origin}/${item.name}/${page}`, 'utf8')))
         const text = textPages.join(' ')
         return { ...item, text }
     }
@@ -64,18 +74,16 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const sourceGenerator = () => Globby.globbyStream(options.originInitial || origin, {
-            objectMode: true,
-            onlyFiles: false,
-            deep: 1
-        })
-        const source = () => Scramjet.DataStream.from(sourceGenerator()).map(file => {
-            return {
-                name: file.name,
-                input: `${origin}/${file.name}`,
-                output: `${destination}/${file.name}`
-            }
-        })
+        const source = () => {
+            const listing = FSExtra.opendir(options.originInitial || origin)
+            return Scramjet.DataStream.from(listing).map(file => {
+                return {
+                    name: file.name,
+                    input: `${origin}/${file.name}`,
+                    output: `${destination}/${file.name}`
+                }
+            })
+        }
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(listing).unorder(read).unorder(write)
         return { run, length }

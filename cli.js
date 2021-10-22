@@ -24,6 +24,7 @@ function renderer() {
     const progress = (text, total) => {
         let tick = 0
         const update = () => {
+            if (total === 0) return
             const width = Process.stderr.columns - text.length - 8
             const proportion = tick / total
             const barWidth = Math.floor(proportion * width)

@@ -73,7 +73,8 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                     operation: 'extract-pdf-to-text',
                     input: item.input,
                     output: item.output,
-                    message: e.message
+                    message: e.message,
+                    isError: true
                 })
                 return extract(item)
             }

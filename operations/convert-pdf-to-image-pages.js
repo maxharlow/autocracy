@@ -105,7 +105,8 @@ async function initialise(origin, destination, options = { method: 'shell', dens
                     operation: 'convert-pdf-to-image-pages',
                     input: item.input,
                     output: item.output,
-                    message: e.message
+                    message: e.message,
+                    isError: true
                 })
                 return { ...item, skip: true } // failed with error
             }

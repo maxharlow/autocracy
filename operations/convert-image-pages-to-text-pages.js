@@ -127,7 +127,8 @@ async function initialise(origin, destination, options = { method: 'shell', lang
                     operation: 'convert-image-pages-to-text-pages',
                     input: item.input,
                     output: item.output,
-                    message: e.message
+                    message: e.message,
+                    isError: true
                 })
                 return { ...item, skip: true } // failed with error
             }

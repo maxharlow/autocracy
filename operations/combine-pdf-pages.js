@@ -103,7 +103,8 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                     operation: 'combine-pdf-pages',
                     input: item.input,
                     output: item.output,
-                    message: e.message
+                    message: e.message,
+                    isError: true
                 })
                 return combine(item)
             }

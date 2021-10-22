@@ -43,7 +43,7 @@ function renderer() {
         const slotRemainder = space % texts.length
         return texts.map((text, i) => '…' + text.slice(-slotSpace - (i === 0 ? slotRemainder : 0)))
     }
-    const alert = ({ operation, input, output, message }) => {
+    const alert = ({ operation, input, output, message, isError }) => {
         const key = [operation, input, output].filter(x => x).join('-')
         const space = Process.stderr.columns - (StripAnsi(operation).length + StripAnsi(message).length + 8)
         const [inputTruncated, outputTruncated] = truncate(space, input, output)
@@ -54,7 +54,10 @@ function renderer() {
             Chalk.blue(' → '),
             outputTruncated,
             ': ',
-            message.toLowerCase().startsWith('done') ? Chalk.green(message) : message.endsWith('...') ? Chalk.yellow(message) : Chalk.magenta(message)
+            isError ? Chalk.red.bold(message)
+                : message.endsWith('...') ? Chalk.yellow(message)
+                : message.toLowerCase().startsWith('done') ? Chalk.green(message)
+                : Chalk.magenta(message)
         ]
         const value = elements.filter(x => x).join('')
         draw(key, value, 'alert')

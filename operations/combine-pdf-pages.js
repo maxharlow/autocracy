@@ -50,10 +50,21 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             const pagesList = item.pages.map(page => `"${origin}/${item.name}/${page}"`).join(' ')
             const output = Tempy.file()
             const command = `mutool merge -o ${output} ${pagesList}`
-            await execute(command)
-            const data = await FSExtra.readFile(output)
-            await FSExtra.remove(output)
-            return data
+            try {
+                await execute(command)
+                const data = await FSExtra.readFile(output)
+                await FSExtra.remove(output)
+                return data
+            }
+            catch (e) {
+                await FSExtra.remove(output)
+                const message = e.message.trim()
+                    .split('\n')
+                    .filter(line => !line.match(/Command failed:|warning:|aborting process/))
+                    .map(line => line.replace('error: ', ''))
+                    .join(', ')
+                throw new Error(message)
+            }
         }
         return { run }
     }

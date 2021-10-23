@@ -5,9 +5,12 @@ import StripAnsi from 'strip-ansi'
 import autocracy from './autocracy.js'
 
 function renderer() {
+    let drawing = false
     let alerts = {}
     let tickers = {}
     const draw = (key, value, type) => {
+        if (drawing) return
+        drawing = true
         const lines = Object.values(alerts).length + Object.values(tickers).length
         if (lines > 0) Process.stderr.moveCursor(0, -lines)
         if (type === 'alert') alerts[key] = value
@@ -20,6 +23,7 @@ function renderer() {
             Process.stderr.clearLine()
             ticker()
         })
+        drawing = false
     }
     const progress = (text, total) => {
         let tick = 0

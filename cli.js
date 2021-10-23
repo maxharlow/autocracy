@@ -4,69 +4,61 @@ import Chalk from 'chalk'
 import autocracy from './autocracy.js'
 
 function renderer() {
-    let drawing = false
+    let isFinal = false
     let alerts = {}
     let tickers = {}
-    const draw = (key, value, type) => {
-        if (drawing) return
-        drawing = true
-        const lines = Object.values(alerts).length + Object.values(tickers).length
-        if (lines > 0) Process.stderr.moveCursor(0, -lines)
-        if (type === 'alert') alerts[key] = value
-        if (type === 'ticker') tickers[key] = value
-        Object.values(alerts).forEach(line => {
-            Process.stderr.clearLine()
-            Process.stderr.write(line + '\n')
-        })
-        Object.values(tickers).forEach(ticker => {
-            Process.stderr.clearLine()
-            ticker()
-        })
-        drawing = false
-    }
-    const progress = (text, total) => {
-        let tick = 0
-        const width = Process.stderr.columns - text.length - 8
-        const update = () => {
-            if (total === 0) return
-            const proportion = tick / total
-            const barWidth = Math.floor(proportion * width)
-            const bar = '█'.repeat(barWidth) + ' '.repeat(width - barWidth)
-            const percentage = `${Math.floor(proportion * 100)}%`.padStart(4, ' ')
-            console.error(`${text} |${bar}| ${percentage}`)
-        }
-        draw(text, update, 'ticker')
-        return () => {
-            tick = tick + 1
-            draw(text, update, 'ticker')
-        }
-    }
     const truncate = (space, ...texts) => {
         if (texts.reduce((a, text) => a + text.length, 0) <= space) return texts
         const slotSpace = Math.min(space / texts.length)
         const slotRemainder = space % texts.length
         return texts.map((text, i) => '…' + text.slice(-slotSpace - (i === 0 ? slotRemainder : 0)))
     }
-    const alert = ({ operation, input, output, message, isError }) => {
-        const key = [operation, input, output].filter(x => x).join('-')
-        const space = Process.stderr.columns - (operation.length + message.length + 8)
-        const [inputTruncated, outputTruncated] = truncate(space, input, output)
-        const elements = [
-            Chalk.blue(operation),
-            ' ',
-            inputTruncated,
-            Chalk.blue(' → '),
-            outputTruncated,
-            ': ',
-            isError ? Chalk.red.bold(message)
-                : message.endsWith('...') ? Chalk.yellow(message)
-                : message.toLowerCase().startsWith('done') ? Chalk.green(message)
-                : Chalk.magenta(message)
-        ]
-        const value = elements.filter(x => x).join('')
-        draw(key, value, 'alert')
+    const draw = linesPrevious => {
+        Process.stderr.moveCursor(0, -linesPrevious)
+        const lines = Object.values(alerts).length + Object.values(tickers).length
+        Object.values(alerts).forEach(details => {
+            Process.stderr.clearLine()
+            const width = Process.stderr.columns - (details.operation.length + details.message.length + 8)
+            const [inputTruncated, outputTruncated] = truncate(width, details.input, details.output)
+            const elements = [
+                Chalk.blue(details.operation),
+                ' ',
+                inputTruncated,
+                Chalk.blue(' → '),
+                outputTruncated,
+                ': ',
+                details.isError ? Chalk.red.bold(details.message)
+                    : details.message.endsWith('...') ? Chalk.yellow(details.message)
+                    : details.message.toLowerCase().startsWith('done') ? Chalk.green(details.message)
+                    : Chalk.magenta(details.message)
+            ]
+            console.error(elements.filter(x => x).join(''))
+        })
+        Object.entries(tickers).forEach(([operation, proportion]) => {
+            Process.stderr.clearLine()
+            const width = Process.stderr.columns - (operation.length + 8)
+            const barWidth = Math.floor(proportion * width)
+            const bar = '█'.repeat(barWidth) + ' '.repeat(width - barWidth)
+            const percentage = `${Math.floor(proportion * 100)}%`.padStart(4, ' ')
+            console.error(`${operation} |${bar}| ${percentage}`)
+        })
+        if (!isFinal) setTimeout(() => draw(lines), 100) // loop
     }
-    return { progress, alert }
+    const progress = (key, total) => {
+        let ticks = 0
+        tickers[key] = 0
+        return () => {
+            ticks = ticks + 1
+            tickers[key] = ticks / total
+        }
+    }
+    const alert = details => {
+        const key = [details.operation, details.input, details.output].filter(x => x).join('-')
+        alerts[key] = details
+    }
+    const finalise = () => isFinal = true
+    draw() // start loop
+    return { progress, alert, finalise }
 }
 
 async function setup() {
@@ -162,7 +154,7 @@ async function setup() {
     })
     if (instructions.argv._.length === 0) instructions.showHelp().exit(0)
     const command = instructions.argv._[0]
-    const { alert, progress } = renderer()
+    const { alert, progress, finalise } = renderer()
     try {
         if (command === 'get-text') {
             const {
@@ -290,6 +282,7 @@ async function setup() {
         else {
             throw new Error(`${command}: unknown command`)
         }
+        finalise()
     }
     catch (e) {
         console.error(instructions.argv.verbose ? e.stack : e.message)

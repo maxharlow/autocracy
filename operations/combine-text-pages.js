@@ -31,6 +31,19 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
             })
             return { ...item, skip: true } // no pages found to combine, skip
         }
+        if (options.originPrior) {
+            const pagesPrior = await FSExtra.readdir(`${options.originPrior}/${item.name}`)
+            if (pagesUnsorted.length < pagesPrior.length) {
+                alert({
+                    operation: 'combine-pdf-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: 'pagefiles missing',
+                    isError: true
+                })
+                return { ...item, skip: true } // don't combine an incomplete set of pages
+            }
+        }
         const pages = pagesUnsorted.sort((a, b) => {
             return Number(a.replace(/[^0-9]/g, '')) - Number(b.replace(/[^0-9]/g, ''))
         })

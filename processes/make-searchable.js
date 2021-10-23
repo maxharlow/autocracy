@@ -63,6 +63,7 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
                 destination,
                 {
                     originInitial: origin,
+                    originPrior: cacheImagePages,
                     method: 'shell'
                 },
                 verbose,

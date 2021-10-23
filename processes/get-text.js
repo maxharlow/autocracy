@@ -62,7 +62,8 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
                 cacheTextPages,
                 destination,
                 {
-                    originInitial: origin
+                    originInitial: origin,
+                    originPrior: cacheImagePages
                 },
                 verbose,
                 alert

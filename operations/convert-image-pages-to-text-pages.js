@@ -15,8 +15,14 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
             const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${item.input}" -`
-            const result = await execute(command)
-            return result.stdout
+            try {
+                const result = await execute(command)
+                return result.stdout
+            }
+            catch (e) {
+                const message = e.message.trim().split('\n').pop()
+                throw new Error(message)
+            }
         }
         return {
             run,

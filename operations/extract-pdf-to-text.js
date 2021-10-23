@@ -75,7 +75,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                     message: e.message,
                     isError: true
                 })
-                return extract(item)
+                return { ...item, skip: true } // failed with error
             }
         }
         const source = () => {

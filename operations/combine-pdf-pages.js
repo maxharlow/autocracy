@@ -106,7 +106,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                     message: e.message,
                     isError: true
                 })
-                return combine(item)
+                return { ...item, skip: true } // failed with error
             }
         }
         const source = () => {

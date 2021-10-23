@@ -1,7 +1,6 @@
 import Process from 'process'
 import Yargs from 'yargs'
 import Chalk from 'chalk'
-import StripAnsi from 'strip-ansi'
 import autocracy from './autocracy.js'
 
 function renderer() {
@@ -27,9 +26,9 @@ function renderer() {
     }
     const progress = (text, total) => {
         let tick = 0
+        const width = Process.stderr.columns - text.length - 8
         const update = () => {
             if (total === 0) return
-            const width = Process.stderr.columns - text.length - 8
             const proportion = tick / total
             const barWidth = Math.floor(proportion * width)
             const bar = '█'.repeat(barWidth) + ' '.repeat(width - barWidth)
@@ -50,7 +49,7 @@ function renderer() {
     }
     const alert = ({ operation, input, output, message, isError }) => {
         const key = [operation, input, output].filter(x => x).join('-')
-        const space = Process.stderr.columns - (StripAnsi(operation).length + StripAnsi(message).length + 8)
+        const space = Process.stderr.columns - (operation.length + message.length + 8)
         const [inputTruncated, outputTruncated] = truncate(space, input, output)
         const elements = [
             Chalk.blue(operation),

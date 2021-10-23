@@ -13,7 +13,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
         const inputExists = await FSExtra.exists(item.input)
         if (!inputExists) {
             if (verbose) alert({
-                operation: 'combine-pdf-pages',
+                operation: 'combine-text-pages',
                 input: item.input,
                 output: item.output,
                 message: 'no input'
@@ -35,7 +35,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
             const pagesPrior = await FSExtra.readdir(`${options.originPrior}/${item.name}`)
             if (pagesUnsorted.length < pagesPrior.length) {
                 alert({
-                    operation: 'combine-pdf-pages',
+                    operation: 'combine-text-pages',
                     input: item.input,
                     output: item.output,
                     message: 'pagefiles missing',

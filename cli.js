@@ -195,7 +195,7 @@ async function setup() {
             console.error('Starting up...')
             const process = await autocracy.operations.extractPDFToText(origin, destination, { method }, verbose, alert)
             const total = await process.length()
-            process.run().each(progress('Working...', total))
+            await process.run().each(progress('Working...', total)).whenEnd()
         }
         else if (command === 'copy-pdf-tagged') {
             const {
@@ -206,7 +206,7 @@ async function setup() {
             console.error('Starting up...')
             const process = await autocracy.operations.copyPDFTagged(origin, destination, { method }, verbose, alert)
             const total = await process.length()
-            process.run().each(progress('Working...', total))
+            await process.run().each(progress('Working...', total)).whenEnd()
         }
         else if (command === 'symlink-missing') {
             const {
@@ -216,7 +216,7 @@ async function setup() {
             console.error('Starting up...')
             const process = await autocracy.operations.symlinkMissing(origin, intermediate, destination, verbose, alert)
             const total = await process.length()
-            process.run().each(progress('Working...', total))
+            await process.run().each(progress('Working...', total)).whenEnd()
         }
         else if (command === 'convert-pdf-to-image-pages') {
             const {
@@ -228,7 +228,7 @@ async function setup() {
             console.error('Starting up...')
             const process = await autocracy.operations.convertPDFToImagePages(origin, destination, { method, density }, verbose, alert)
             const total = await process.length()
-            process.run().each(progress('Working...', total))
+            await process.run().each(progress('Working...', total)).whenEnd()
         }
         else if (command === 'convert-image-pages-to-text-pages') {
             const {
@@ -266,7 +266,7 @@ async function setup() {
             console.error('Starting up...')
             const process = await autocracy.operations.combineTextPages(origin, destination, {}, verbose, alert)
             const total = await process.length()
-            process.run().each(progress('Working...', total))
+            await process.run().each(progress('Working...', total)).whenEnd()
         }
         else if (command === 'combine-pdf-pages') {
             const {
@@ -277,7 +277,7 @@ async function setup() {
             console.error('Starting up...')
             const process = await autocracy.operations.combinePDFPages(origin, destination, { method }, verbose, alert)
             const total = await process.length()
-            process.run().each(progress('Working...', total))
+            await process.run().each(progress('Working...', total)).whenEnd()
         }
         else {
             throw new Error(`${command}: unknown command`)

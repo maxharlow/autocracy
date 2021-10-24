@@ -15,6 +15,7 @@
         "fs-extra": "10.0.x",
         "lookpath": "1.2.x",
         "mupdf-js": "1.0.x",
+        "pdfjs": "2.4.x",
         "scramjet": "4.36.x",
         "tempy": "2.0.x",
         "tesseract.js": "2.1.x",

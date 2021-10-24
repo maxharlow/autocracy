@@ -1,6 +1,7 @@
 import Util from 'util'
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
+import PDF from 'pdfjs'
 import Lookpath from 'lookpath'
 import Tempy from 'tempy'
 import ChildProcess from 'child_process'
@@ -81,7 +82,21 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         return { run }
     }
 
-    async function write(item)  {
+    async function combinerLibrary() {
+        const run = async item => {
+            const document = new PDF.Document()
+            await item.pages.reduce(async (previous, page) => {
+                await previous
+                const pageData = await FSExtra.readFile(`${origin}/${item.name}/${page}`)
+                const pageDocument = new PDF.ExternalDocument(pageData)
+                document.addPagesOf(pageDocument)
+            }, Promise.resolve())
+            return document.asBuffer()
+        }
+        return { run }
+    }
+
+    async function write(item) {
         if (item.skip) return item
         await FSExtra.writeFile(item.output, item.data)
         if (verbose) alert({
@@ -96,7 +111,8 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
     async function setup() {
         await FSExtra.ensureDir(destination)
         const combiners = {
-            shell: combinerShell
+            shell: combinerShell,
+            library: combinerLibrary
         }
         const combiner = await combiners[options.method](destination)
         const combine = async item => {

@@ -112,7 +112,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         await FSExtra.ensureDir(destination)
         const combiners = {
             shell: combinerShell,
-            library: combinerLibrary
+            library: combinerLibrary // slightly slower, has a 2GB limit for output files
         }
         const combiner = await combiners[options.method](destination)
         const combine = async item => {

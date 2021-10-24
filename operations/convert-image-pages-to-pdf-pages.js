@@ -72,8 +72,8 @@ async function initialise(origin, destination, options = { method: 'shell', lang
     async function setup() {
         await FSExtra.ensureDir(destination)
         const converters = {
-            shell: converterShell,
-            library: converterLibrary
+            library: converterLibrary, // much slower
+            shell: converterShell
         }
         const converter = await converters[options.method]()
         const convert = async item => {

@@ -90,7 +90,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         await FSExtra.ensureDir(destination)
         const converters = {
             'aws-textract': converterAWSTextract,
-            library: converterLibrary,
+            library: converterLibrary, // much slower
             shell: converterShell
         }
         const converter = await converters[options.method]()

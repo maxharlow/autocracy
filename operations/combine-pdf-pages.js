@@ -59,7 +59,6 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         if (!isInstalled) throw new Error('MuPDF not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            if (item.skip) return item
             const pagesList = item.pages.map(page => `"${origin}/${item.name}/${page}"`).join(' ')
             const output = Tempy.file()
             const command = `mutool merge -o ${output} ${pagesList}`

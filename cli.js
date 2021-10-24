@@ -5,6 +5,7 @@ import autocracy from './autocracy.js'
 
 function renderer() {
     let isFinal = false
+    let isDirty = true
     let alerts = {}
     let tickers = {}
     const truncate = (space, ...texts) => {
@@ -14,6 +15,10 @@ function renderer() {
         return texts.map((text, i) => '…' + text.replaceAll('\n', '\\n').slice(-slotSpace - (i === 0 ? slotRemainder : 0)))
     }
     const draw = linesPrevious => {
+        if (!isDirty) {
+            setTimeout(() => draw(linesPrevious), 100)
+            return
+        }
         Process.stderr.moveCursor(0, -linesPrevious)
         const lines = Object.values(alerts).length + Object.values(tickers).length
         Object.values(alerts).forEach(details => {
@@ -42,6 +47,7 @@ function renderer() {
             const percentage = `${Math.floor(proportion * 100)}%`.padStart(4, ' ')
             console.error(`${operation} |${bar}| ${percentage}`)
         })
+        isDirty = false
         if (!isFinal) setTimeout(() => draw(lines), 100) // loop
     }
     const progress = (key, total) => {
@@ -50,11 +56,13 @@ function renderer() {
         return () => {
             ticks = ticks + 1
             tickers[key] = ticks / total
+            isDirty = true
         }
     }
     const alert = details => {
         const key = [details.operation, details.input, details.output].filter(x => x).join('-')
         alerts[key] = details
+        isDirty = true
     }
     const finalise = () => isFinal = true
     draw() // start loop

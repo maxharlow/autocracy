@@ -135,7 +135,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             })
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(convert).unorder(write)
+        const run = () => source().setOptions({ maxParallel: OS.cpus().length }).unorder(convert).unorder(write)
         return { run, length, terminate: converter.terminate }
     }
 

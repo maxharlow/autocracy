@@ -70,12 +70,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
         }
         const textPages = await Promise.all(item.pages.map(page => FSExtra.readFile(`${origin}/${item.name}/${page}`, 'utf8')))
         const text = textPages.join(' ')
-        return { ...item, text }
-    }
-
-    async function write(item) {
-        if (item.skip) return item
-        await FSExtra.writeFile(item.output, item.text)
+        await FSExtra.writeFile(item.output, text)
         if (verbose) alert({
             operation: 'combine-text-pages',
             input: item.input,
@@ -98,7 +93,7 @@ async function initialise(origin, destination, options = {}, verbose, alert) {
             })
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(listing).unorder(read).unorder(write)
+        const run = () => source().unorder(listing).unorder(read)
         return { run, length }
     }
 

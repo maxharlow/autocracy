@@ -65,9 +65,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             const command = `mutool merge -o ${output} ${pagesList}`
             try {
                 await execute(command)
-                const data = await FSExtra.readFile(output)
-                await FSExtra.remove(output)
-                return data
+                await FSExtra.move(output, item.output)
             }
             catch (e) {
                 await FSExtra.remove(output)
@@ -91,21 +89,10 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                 const pageDocument = new PDF.ExternalDocument(pageData)
                 document.addPagesOf(pageDocument)
             }, Promise.resolve())
-            return document.asBuffer()
+            const data = document.asBuffer()
+            await FSExtra.writeFile(item.output, data)
         }
         return { run }
-    }
-
-    async function write(item) {
-        if (item.skip) return item
-        await FSExtra.writeFile(item.output, item.data)
-        if (verbose) alert({
-            operation: 'combine-pdf-pages',
-            input: item.input,
-            output: item.output,
-            message: 'done'
-        })
-        return item
     }
 
     async function setup() {
@@ -134,8 +121,14 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                 message: 'combining...'
             })
             try {
-                const data = await combiner.run(item)
-                return { ...item, data }
+                await combiner.run(item)
+                if (verbose) alert({
+                    operation: 'combine-pdf-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: 'done'
+                })
+                return item
             }
             catch (e) {
                 alert({
@@ -159,7 +152,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             })
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(listing).unorder(combine).unorder(write)
+        const run = () => source().unorder(listing).unorder(combine)
         return { run, length }
     }
 

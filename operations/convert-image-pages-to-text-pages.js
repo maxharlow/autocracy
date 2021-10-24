@@ -17,7 +17,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${item.input}" -`
             try {
                 const result = await execute(command)
-                return result.stdout
+                await FSExtra.writeFile(item.output, result.stdout.replace(/\s+/g, ' '))
             }
             catch (e) {
                 const message = e.message.trim().split('\n').pop()
@@ -48,7 +48,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }, Promise.resolve())
         const run = async item => {
             const output = await scheduler.addJob('recognize', item.input)
-            return output.data.text
+            await FSExtra.writeFile(item.output, output.data.text.replace(/\s+/g, ' '))
         }
         return {
             run,
@@ -66,24 +66,12 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             })
             const response = await textract.send(detect)
             const text = response.Blocks.filter(block => block.BlockType == 'LINE').map(block => block.Text).join(' ')
-            return text
+            await FSExtra.writeFile(item.output, text.replace(/\s+/g, ' '))
         }
         return {
             run,
             terminate: () => {} // for consistency
         }
-    }
-
-    async function write(item) {
-        if (item.skip) return item
-        await FSExtra.writeFile(item.output, item.text)
-        if (verbose) alert({
-            operation: 'convert-image-pages-to-text-pages',
-            input: item.input,
-            output: item.output,
-            message: 'done'
-        })
-        return item
     }
 
     async function setup() {
@@ -123,9 +111,14 @@ async function initialise(origin, destination, options = { method: 'shell', lang
                 message: 'converting...'
             })
             try {
-                const result = await converter.run(item)
-                const text = result.replace(/\s+/g, ' ')
-                return { ...item, text }
+                await converter.run(item)
+                if (verbose) alert({
+                    operation: 'convert-image-pages-to-text-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: 'done'
+                })
+                return item
             }
             catch (e) {
                 alert({
@@ -155,8 +148,8 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => {
-            if (options.method === 'aws-textract') return source().setOptions({ maxParallel: 1 }).rate(1).unorder(convert).unorder(write)
-            return source().unorder(convert).unorder(write)
+            if (options.method === 'aws-textract') return source().setOptions({ maxParallel: 1 }).rate(1).unorder(convert)
+            return source().unorder(convert)
         }
         return { run, length, terminate: converter.terminate }
     }

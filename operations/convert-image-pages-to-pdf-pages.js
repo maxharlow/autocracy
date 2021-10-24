@@ -3,6 +3,7 @@ import Util from 'util'
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import Lookpath from 'lookpath'
+import Tempy from 'tempy'
 import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 
@@ -13,11 +14,11 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         if (!isInstalled) throw new Error('Tesseract not found!')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${item.input}" - pdf`
+            const output = Tempy.file()
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${item.input}" ${output} pdf`
             try {
-                const result = await execute(command, { encoding: 'binary', maxBuffer: 2 * 1024 * 1024 * 1024 }) // 2GB
-                if (!result.stdout) throw new Error('output empty')
-                return Buffer.from(result.stdout, 'binary')
+                await execute(command)
+                await FSExtra.move(`${output}.pdf`, item.output)
             }
             catch (e) {
                 const message = e.message.trim().split('\n').pop()
@@ -49,24 +50,13 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         const run = async item => {
             await scheduler.addJob('recognize', item.input)
             const output = await scheduler.addJob('getPDF', item.input)
-            return Buffer.from(output.data)
+            const data = Buffer.from(output.data)
+            await FSExtra.writeFile(item.output, data)
         }
         return {
             run,
             terminate: scheduler.terminate
         }
-    }
-
-    async function write(item) {
-        if (item.skip) return item
-        await FSExtra.writeFile(item.output, item.data)
-        if (verbose) alert({
-            operation: 'convert-image-pages-to-pdf-pages',
-            input: item.input,
-            output: item.output,
-            message: 'done'
-        })
-        return item
     }
 
     async function setup() {
@@ -105,8 +95,14 @@ async function initialise(origin, destination, options = { method: 'shell', lang
                 message: 'converting...'
             })
             try {
-                const data = await converter.run(item)
-                return { ...item, data }
+                await converter.run(item)
+                if (verbose) alert({
+                    operation: 'convert-image-pages-to-pdf-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: 'done'
+                })
+                return item
             }
             catch (e) {
                 alert({
@@ -135,7 +131,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             })
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().setOptions({ maxParallel: OS.cpus().length }).unorder(convert).unorder(write)
+        const run = () => source().setOptions({ maxParallel: OS.cpus().length }).unorder(convert)
         return { run, length, terminate: converter.terminate }
     }
 

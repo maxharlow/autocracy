@@ -13,30 +13,19 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         const run = async item => {
             const command = `mutool draw -F txt "${item.input}"`
             const result = await execute(command)
-            return result.stdout
+            const text = result.stdout.replace(/\s+/g, ' ')
+            if (text.trim() === '') {
+                if (verbose) alert({
+                    operation: 'extract-pdf-to-text',
+                    input: item.input,
+                    output: item.output,
+                    message: 'no text found'
+                })
+                return { ...item, skip: true }
+            }
+            await FSExtra.writeFile(item.output, text)
         }
         return { run }
-    }
-
-    async function write(item) {
-        if (item.skip) return item
-        if (item.text.trim() === '') {
-            if (verbose) alert({
-                operation: 'extract-pdf-to-text',
-                input: item.input,
-                output: item.output,
-                message: 'no text found'
-            })
-            return { ...item, skip: true } // don't write empty files
-        }
-        await FSExtra.writeFile(item.output, item.text)
-        if (verbose) alert({
-            operation: 'extract-pdf-to-text',
-            input: item.input,
-            output: item.output,
-            message: 'done'
-        })
-        return item
     }
 
     async function setup() {
@@ -63,9 +52,14 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                 message: 'extracting...'
             })
             try {
-                const result = await extractor.run(item)
-                const text = result.replace(/\s+/g, ' ')
-                return { ...item, text }
+                await extractor.run(item)
+                if (verbose) alert({
+                    operation: 'extract-pdf-to-text',
+                    input: item.input,
+                    output: item.output,
+                    message: 'done'
+                })
+                return item
             }
             catch (e) {
                 alert({
@@ -89,7 +83,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             })
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(extract).unorder(write)
+        const run = () => source().unorder(extract)
         return { run, length }
     }
 

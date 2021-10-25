@@ -9,9 +9,10 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
     async function extractorShell() {
         const isInstalled = await Lookpath.lookpath('mutool')
         if (!isInstalled) throw new Error('MuPDF not found!')
+        const escaped = path => path.replaceAll('\n', '\\n').replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `mutool draw -F txt "${item.input}"`
+            const command = `mutool draw -F txt "${escaped(item.input)}"`
             try {
                 const result = await execute(command)
                 const text = result.stdout.replace(/\s+/g, ' ')

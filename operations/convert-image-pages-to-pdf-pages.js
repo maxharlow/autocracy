@@ -12,10 +12,11 @@ async function initialise(origin, destination, options = { method: 'shell', lang
     async function converterShell() {
         const isInstalled = await Lookpath.lookpath('tesseract')
         if (!isInstalled) throw new Error('Tesseract not found!')
+        const escaped = path => path.replaceAll('\n', '\\n').replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
             const output = Tempy.file()
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${item.input}" ${output} pdf`
+            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${escaped(item.input)}" ${output} pdf`
             try {
                 await execute(command)
                 await FSExtra.move(`${output}.pdf`, item.output)

@@ -11,10 +11,11 @@ async function initialise(origin, destination, options = { method: 'shell', dens
     async function converterShell() {
         const isInstalled = await Lookpath.lookpath('mutool')
         if (!isInstalled) throw new Error('MuPDF not found!')
+        const escaped = path => path.replaceAll('\n', '\\n').replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
             const output = Tempy.directory()
-            const command = `mutool draw -r ${options.density} -o "${output}/page-%d.png" "${item.input}"`
+            const command = `mutool draw -r ${options.density} -o "${output}/page-%d.png" "${escaped(item.input)}"`
             try {
                 await execute(command)
                 await FSExtra.move(output, `${item.output}`)

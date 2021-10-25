@@ -12,7 +12,7 @@ function renderer() {
         if (texts.reduce((a, text) => a + text.length, 0) <= space) return texts
         const slotSpace = Math.min(space / texts.length)
         const slotRemainder = space % texts.length
-        return texts.map((text, i) => '…' + text.replaceAll('\n', '\\n').slice(-slotSpace - (i === 0 ? slotRemainder : 0)))
+        return texts.map((text, i) => '…' + text.slice(-slotSpace - (i === 0 ? slotRemainder : 0)))
     }
     const draw = linesPrevious => {
         if (!isDirty) {

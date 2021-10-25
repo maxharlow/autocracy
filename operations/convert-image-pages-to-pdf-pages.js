@@ -117,17 +117,18 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         }
         const source = () => {
             const listing = FSExtra.opendir(options.originInitial || origin)
-            return Scramjet.DataStream.from(listing).flatMap(async file => {
-                const exists = await FSExtra.exists(`${origin}/${file.name}`)
+            return Scramjet.DataStream.from(listing).flatMap(async entry => {
+                const exists = await FSExtra.exists(`${origin}/${entry.name}`)
                 if (!exists) return []
-                const pages = await FSExtra.readdir(`${origin}/${file.name}`)
+                const pages = await FSExtra.readdir(`${origin}/${entry.name}`, { withFileTypes: true })
                 return pages.map(page => {
+                    if (!page.isFile()) return
                     return {
-                        name: file.name,
-                        input: `${origin}/${file.name}/${page}`,
-                        output: `${destination}/${file.name}/${page.replace(/png$/, 'pdf')}`
+                        name: entry.name,
+                        input: `${origin}/${entry.name}/${page.name}`,
+                        output: `${destination}/${entry.name}/${page.name.replace(/png$/, 'pdf')}`
                     }
-                })
+                }).filter(x => x)
             })
         }
         const length = () => source().reduce(a => a + 1, 0)

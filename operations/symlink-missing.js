@@ -27,13 +27,14 @@ async function initialise(origin, intermediate, destination, verbose, alert) {
         await FSExtra.ensureDir(destination)
         const source = () => {
             const listing = FSExtra.opendir(origin)
-            return Scramjet.DataStream.from(listing).map(file => {
+            return Scramjet.DataStream.from(listing).map(entry => {
+                if (!entry.isFile()) return
                 return {
-                    name: file.name,
-                    input: `${origin}/${file.name}`,
-                    output: `${destination}/${file.name}`
+                    name: entry.name,
+                    input: `${origin}/${entry.name}`,
+                    output: `${destination}/${entry.name}`
                 }
-            })
+            }).filter(x => x)
         }
         const run = () => source().unorder(symlink)
         const length = () => source().reduce(a => a + 1, 0)

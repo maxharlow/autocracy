@@ -46,13 +46,14 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         await FSExtra.ensureDir(destination)
         const source = () => {
             const listing = FSExtra.opendir(origin)
-            return Scramjet.DataStream.from(listing).map(file => {
+            return Scramjet.DataStream.from(listing).map(entry => {
+                if (!entry.isFile()) return
                 return {
-                    name: file.name,
-                    input: `${origin}/${file.name}`,
-                    output: `${destination}/${file.name}`
+                    name: entry.name,
+                    input: `${origin}/${entry.name}`,
+                    output: `${destination}/${entry.name}`
                 }
-            })
+            }).filter(x => x)
         }
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(copyMaybe)

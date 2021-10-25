@@ -83,6 +83,7 @@ async function setup() {
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('f', { alias: 'force-ocr', type: 'boolean', describe: 'Do not use tagged-text even if it is available', default: false })
+            .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find', default: 'eng' })
     })
     instructions.command('make-searchable', 'Extract or, if necessary, OCR each PDF, and output new PDFs with the text embedded', args => {
         args
@@ -91,6 +92,7 @@ async function setup() {
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('f', { alias: 'force-ocr', type: 'boolean', describe: 'Do not use tagged-text even if it is available', default: false })
+            .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find', default: 'eng' })
     })
     instructions.command('extract-pdf-to-text', false, args => {
         args
@@ -168,10 +170,11 @@ async function setup() {
             const {
                 _: [, origin, destination],
                 forceOcr,
+                language,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = autocracy.getText(origin, destination, forceOcr, verbose, alert)
+            const procedures = autocracy.getText(origin, destination, { forceOCR: forceOcr, language }, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()
@@ -183,10 +186,11 @@ async function setup() {
             const {
                 _: [, origin, destination],
                 forceOcr,
+                language,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = autocracy.makeSearchable(origin, destination, forceOcr, verbose, alert)
+            const procedures = autocracy.makeSearchable(origin, destination, { forceOCR: forceOcr, language }, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()

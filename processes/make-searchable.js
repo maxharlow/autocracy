@@ -1,11 +1,11 @@
 import autocracy from './../autocracy.js'
 
-function initialise(origin, destination, forceOCR, verbose, alert) {
+function initialise(origin, destination, options = { forceOCR: false, language: 'eng' }, verbose, alert) {
     const cacheUntagged = '.autocracy-cache/untagged'
     const cacheImagePages = '.autocracy-cache/image-pages'
     const cachePDFPages = '.autocracy-cache/pdf-pages'
     const operations = [
-        !forceOCR && {
+        !options.forceOCR && {
             name: 'Copying already-tagged PDFs',
             setup: () => autocracy.operations.copyPDFTagged(
                 origin,
@@ -17,7 +17,7 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
                 alert
             )
         },
-        !forceOCR && {
+        !options.forceOCR && {
             name: 'Symlinking untagged PDFs',
             setup: () => autocracy.operations.symlinkMissing(
                 origin,
@@ -28,12 +28,12 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
             )
         },
         {
-            name: forceOCR ? 'Converting PDFs to image pages' : 'Converting untagged PDFs to image pages',
+            name: options.forceOCR ? 'Converting PDFs to image pages' : 'Converting untagged PDFs to image pages',
             setup: () => autocracy.operations.convertPDFToImagePages(
-                forceOCR ? origin : cacheUntagged,
+                options.forceOCR ? origin : cacheUntagged,
                 cacheImagePages,
                 {
-                    ...forceOCR ? {} : { originInitial: origin },
+                    ...options.forceOCR ? {} : { originInitial: origin },
                     method: 'shell',
                     density: 300
                 },
@@ -49,7 +49,7 @@ function initialise(origin, destination, forceOCR, verbose, alert) {
                 {
                     originInitial: origin,
                     method: 'shell',
-                    language: 'eng',
+                    language: options.language,
                     density: 300
                 },
                 verbose,

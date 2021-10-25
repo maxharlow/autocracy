@@ -15,14 +15,25 @@ async function initialise(origin, destination, options = { method: 'shell', dens
         const run = async item => {
             const output = Tempy.directory()
             const command = `mutool draw -r ${options.density} -o "${output}/page-%d.png" "${item.input}"`
-            await execute(command)
-            await FSExtra.move(output, `${item.output}`)
-            if (verbose) alert({
-                operation: 'convert-pdf-to-image-pages',
-                input: item.input,
-                output: item.output,
-                message: 'done'
-            })
+            try {
+                await execute(command)
+                await FSExtra.move(output, `${item.output}`)
+                if (verbose) alert({
+                    operation: 'convert-pdf-to-image-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: 'done'
+                })
+            }
+            catch (e) {
+                await FSExtra.remove(output)
+                const message = e.message.trim()
+                    .split('\n')
+                    .filter(line => !line.match(/Command failed:|warning:|aborting process/))
+                    .map(line => line.replace('error: ', ''))
+                    .join(', ')
+                throw new Error(message)
+            }
         }
         return { run }
     }

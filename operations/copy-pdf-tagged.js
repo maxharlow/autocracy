@@ -12,8 +12,18 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
             const command = `mutool draw -F txt "${item.input}"`
-            const result = await execute(command)
-            return result.stdout.trim() !== ''
+            try {
+                const result = await execute(command)
+                return result.stdout.trim() !== ''
+            }
+            catch (e) {
+                const message = e.message.trim()
+                    .split('\n')
+                    .filter(line => !line.match(/Command failed:|warning:|aborting process/))
+                    .map(line => line.replace('error: ', ''))
+                    .join(', ')
+                throw new Error(message)
+            }
         }
         return { run }
     }

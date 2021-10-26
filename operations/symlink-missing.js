@@ -5,20 +5,21 @@ async function initialise(origin, intermediate, destination, verbose, alert) {
 
     async function symlink(item) {
         const intermediateExists = await FSExtra.exists(`${intermediate}/${item.name}`) // so tagged-text was found and extracted
-        if (!intermediateExists) {
-            await FSExtra.ensureSymlink(item.input, item.output)
+        if (intermediateExists) {
             if (verbose) alert({
                 operation: 'symlink-missing',
                 input: item.input,
                 output: item.output,
-                message: 'done'
+                message: 'output exists'
             })
+            return item
         }
-        else if (verbose) alert({
+        await FSExtra.ensureSymlink(item.input, item.output)
+        if (verbose) alert({
             operation: 'symlink-missing',
             input: item.input,
             output: item.output,
-            message: 'output exists'
+            message: 'done'
         })
         return item
     }

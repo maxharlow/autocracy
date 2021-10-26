@@ -58,7 +58,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
     async function combinerShell() {
         const isInstalled = await Lookpath.lookpath('mutool')
         if (!isInstalled) throw new Error('MuPDF not found!')
-        const escaped = path => path.replaceAll('\n', '\\n').replaceAll('"', '\\"')
+        const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
             const output = Tempy.file()

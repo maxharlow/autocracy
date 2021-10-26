@@ -4,6 +4,7 @@ function initialise(origin, destination, options = { forceOCR: false, language: 
     const cacheUntagged = '.autocracy-cache/untagged'
     const cacheImagePages = '.autocracy-cache/image-pages'
     const cachePDFPages = '.autocracy-cache/pdf-pages'
+    const density = 300
     const operations = [
         !options.forceOCR && {
             name: 'Copying already-tagged PDFs',
@@ -35,7 +36,7 @@ function initialise(origin, destination, options = { forceOCR: false, language: 
                 {
                     ...options.forceOCR ? {} : { originInitial: origin },
                     method: 'shell',
-                    density: 300
+                    density
                 },
                 verbose,
                 alert
@@ -50,7 +51,7 @@ function initialise(origin, destination, options = { forceOCR: false, language: 
                     originInitial: origin,
                     method: 'shell',
                     language: options.language,
-                    density: 300
+                    density
                 },
                 verbose,
                 alert

@@ -12,7 +12,7 @@ async function initialise(origin, intermediate, destination, verbose, alert) {
                 output: item.output,
                 message: 'output exists'
             })
-            return item
+            return { ...item, skip: true }
         }
         await FSExtra.ensureSymlink(item.input, item.output)
         if (verbose) alert({

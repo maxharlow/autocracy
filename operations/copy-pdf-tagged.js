@@ -50,7 +50,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             output: item.output,
             message: 'not tagged'
         })
-        return item
+        return { ...item, skip: true }
     }
 
     async function setup() {

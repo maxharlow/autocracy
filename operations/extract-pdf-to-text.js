@@ -44,7 +44,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
         const extractors = {
             shell: extractorShell
         }
-        const extractor = await extractors[options.method](destination)
+        const extractor = await extractors[options.method]()
         const extract = async item => {
             const outputExists = await FSExtra.exists(item.output)
             if (outputExists) {

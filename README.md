@@ -21,11 +21,11 @@ Usage
 
 Autocracy can run two different processes.
 
-`make-searchable` produces searchable PDFs:
+Create searchable PDFs:
 
     $ autocracy make-searchable <origin> <destination>
 
-`get-text` produces text files:
+Produce text files:
 
     $ autocracy get-text <origin> <destination>
 

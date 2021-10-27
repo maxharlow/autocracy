@@ -102,7 +102,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
             shell: combinerShell,
             library: combinerLibrary // slightly slower, has a 2GB limit for output files
         }
-        const combiner = await combiners[options.method](destination)
+        const combiner = await combiners[options.method]()
         const combine = async item => {
             if (item.skip) return item
             const outputExists = await FSExtra.exists(item.output)

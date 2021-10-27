@@ -4,7 +4,12 @@ import Scramjet from 'scramjet'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 
-async function initialise(origin, destination, options = { method: 'shell' }, verbose, alert) {
+async function initialise(origin, destination, parameters, verbose, alert) {
+
+    const options = {
+        method: 'shell',
+        ...parameters
+    }
 
     async function extractorShell() {
         const isInstalled = await Lookpath.lookpath('mutool')

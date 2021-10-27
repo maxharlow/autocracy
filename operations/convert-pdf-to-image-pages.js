@@ -6,7 +6,13 @@ import Tempy from 'tempy'
 import ChildProcess from 'child_process'
 import MuPDF from 'mupdf-js'
 
-async function initialise(origin, destination, options = { method: 'shell', density: 300 }, verbose, alert) {
+async function initialise(origin, destination, parameters, verbose, alert) {
+
+    const options = {
+        method: 'shell',
+        density: 300,
+        ...parameters
+    }
 
     async function converterShell() {
         const isInstalled = await Lookpath.lookpath('mutool')

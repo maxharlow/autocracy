@@ -1,6 +1,11 @@
 import autocracy from './../autocracy.js'
 
-function initialise(origin, destination, options = { forceOCR: false, language: 'eng' }, verbose, alert) {
+function initialise(origin, destination, parameters, verbose, alert) {
+    const options = {
+        forceOCR: false,
+        language: 'eng',
+        ...parameters
+    }
     const cacheUntagged = '.autocracy-cache/untagged'
     const cacheImagePages = '.autocracy-cache/image-pages'
     const cachePDFTextPages = '.autocracy-cache/pdf-text-pages'

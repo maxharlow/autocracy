@@ -1,7 +1,9 @@
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 
-async function initialise(origin, destination, options = {}, verbose, alert) {
+async function initialise(origin, destination, parameters, verbose, alert) {
+
+    const options = parameters
 
     async function listing(item) {
         if (verbose) alert({

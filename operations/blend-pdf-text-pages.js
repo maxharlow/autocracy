@@ -5,7 +5,12 @@ import Lookpath from 'lookpath'
 import Tempy from 'tempy'
 import ChildProcess from 'child_process'
 
-async function initialise(origin, originText, destination, options = { method: 'shell' }, verbose, alert) {
+async function initialise(origin, originText, destination, parameters, verbose, alert) {
+
+    const options = {
+        method: 'shell',
+        ...parameters
+    }
 
     async function blenderShell() {
         const isInstalled = await Lookpath.lookpath('QPDF')

@@ -7,7 +7,15 @@ import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 import * as AWSTextract from '@aws-sdk/client-textract'
 
-async function initialise(origin, destination, options = { method: 'shell', language: 'eng', density: 300, awsRegion = 'eu-west-1' }, verbose, alert) {
+async function initialise(origin, destination, parameters, verbose, alert) {
+
+    const options = {
+        method: 'shell',
+        language: 'eng',
+        density: 300,
+        awsRegion: 'eu-west-1',
+        ...parameters
+    }
 
     async function converterShell() {
         const isInstalled = await Lookpath.lookpath('tesseract')

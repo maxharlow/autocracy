@@ -136,6 +136,7 @@ async function setup() {
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['aws-textract', 'library', 'shell'], default: 'shell' })
             .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find (not used by AWS)', default: 'eng' })
             .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
+            .option('a', { alias: 'aws-region', type: 'string', describe: 'The AWS region, if using that method', default: 'eu-west-1' })
     })
     instructions.command('convert-image-pages-to-pdf-text-pages', false, args => {
         args
@@ -257,10 +258,11 @@ async function setup() {
                 method,
                 language,
                 density,
+                awsRegion,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const process = await autocracy.operations.convertImagePagesToTextPages(origin, destination, { method, language, density }, verbose, alert)
+            const process = await autocracy.operations.convertImagePagesToTextPages(origin, destination, { method, language, density, awsRegion }, verbose, alert)
             const total = await process.length()
             await process.run().each(progress('Working...', total)).whenEnd()
             await process.terminate()

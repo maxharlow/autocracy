@@ -15,7 +15,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${escaped(item.input)}" -`
+            const command = `OMP_THREAD_LIMIT=1 tesseract -c tessedit_do_invert=0 -l ${options.language} --dpi ${options.density} --psm 11 "${escaped(item.input)}" -`
             try {
                 const result = await execute(command)
                 await FSExtra.writeFile(item.output, result.stdout.replace(/\s+/g, ' '))
@@ -42,6 +42,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             await worker.setParameters({
                 tessjs_create_hocr: false,
                 tessjs_create_tsv: false,
+                tessedit_do_invert: false,
                 user_defined_dpi: options.density,
                 tessedit_pageseg_mode: Tesseract.PSM.PSM_SPARSE_TEXT
             })

@@ -137,9 +137,9 @@ async function setup() {
             .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find (not used by AWS)', default: 'eng' })
             .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
     })
-    instructions.command('convert-image-pages-to-pdf-pages', false, args => {
+    instructions.command('convert-image-pages-to-pdf-text-pages', false, args => {
         args
-            .usage('Usage: autocracy convert-image-pages-to-pdf-pages <origin> <destination>')
+            .usage('Usage: autocracy convert-image-pages-to-pdf-text-pages <origin> <destination>')
             .demandCommand(2, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
@@ -161,6 +161,15 @@ async function setup() {
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Combination method to use', choices: ['library', 'shell'], default: 'shell' })
+    })
+    instructions.command('blend-pdf-text-pages', false, args => {
+        args
+            .usage('Usage: autocracy blend-pdf-text-pages <origin> <origin-text> <destination>')
+            .demandCommand(3, '')
+            .positional('origin', { type: 'string', describe: 'Origin directory' })
+            .positional('origin-text', { type: 'string', describe: 'Origin text directory' })
+            .positional('destination', { type: 'string', describe: 'Destination directory' })
+            .option('m', { alias: 'method', type: 'choices', describe: 'Combination method to use', choices: ['shell'], default: 'shell' })
     })
     if (instructions.argv._.length === 0) instructions.showHelp().exit(0)
     const command = instructions.argv._[0]
@@ -195,7 +204,7 @@ async function setup() {
                 await previous
                 const process = await procedure.setup()
                 const total = await process.length()
-                return process.run().each(progress(`${procedure.name}...`.padEnd(42, ' '), total)).whenEnd()
+                return process.run().each(progress(`${procedure.name}...`.padEnd(46, ' '), total)).whenEnd()
             }, Promise.resolve())
         }
         else if (command === 'extract-pdf-to-text') {
@@ -256,7 +265,7 @@ async function setup() {
             await process.run().each(progress('Working...', total)).whenEnd()
             await process.terminate()
         }
-        else if (command === 'convert-image-pages-to-pdf-pages') {
+        else if (command === 'convert-image-pages-to-pdf-text-pages') {
             const {
                 _: [, origin, destination],
                 method,
@@ -288,6 +297,17 @@ async function setup() {
             } = instructions.argv
             console.error('Starting up...')
             const process = await autocracy.operations.combinePDFPages(origin, destination, { method }, verbose, alert)
+            const total = await process.length()
+            await process.run().each(progress('Working...', total)).whenEnd()
+        }
+        else if (command === 'blend-pdf-text-pages') {
+            const {
+                _: [, origin, originText, destination],
+                method,
+                verbose
+            } = instructions.argv
+            console.error('Starting up...')
+            const process = await autocracy.operations.blendPDFTextPages(origin, originText, destination, { method }, verbose, alert)
             const total = await process.length()
             await process.run().each(progress('Working...', total)).whenEnd()
         }

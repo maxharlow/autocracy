@@ -3,7 +3,8 @@ import autocracy from './../autocracy.js'
 function initialise(origin, destination, options = { forceOCR: false, language: 'eng' }, verbose, alert) {
     const cacheUntagged = '.autocracy-cache/untagged'
     const cacheImagePages = '.autocracy-cache/image-pages'
-    const cachePDFPages = '.autocracy-cache/pdf-pages'
+    const cachePDFTextPages = '.autocracy-cache/pdf-text-pages'
+    const cachePDFText = '.autocracy-cache/pdf-text'
     const density = 300
     const operations = [
         !options.forceOCR && {
@@ -43,10 +44,10 @@ function initialise(origin, destination, options = { forceOCR: false, language: 
             )
         },
         {
-            name: 'Converting image pages to PDF pages',
-            setup: () => autocracy.operations.convertImagePagesToPDFPages(
+            name: 'Converting image pages to PDF text pages',
+            setup: () => autocracy.operations.convertImagePagesToPDFTextPages(
                 cacheImagePages,
-                cachePDFPages,
+                cachePDFTextPages,
                 {
                     originInitial: origin,
                     method: 'shell',
@@ -58,13 +59,26 @@ function initialise(origin, destination, options = { forceOCR: false, language: 
             )
         },
         {
-            name: 'Combining PDF pages',
+            name: 'Combining PDF text pages',
             setup: () => autocracy.operations.combinePDFPages(
-                cachePDFPages,
-                destination,
+                cachePDFTextPages,
+                cachePDFText,
                 {
                     originInitial: origin,
                     originPrior: cacheImagePages,
+                    method: 'shell'
+                },
+                verbose,
+                alert
+            )
+        },
+        {
+            name: 'Blending PDF text pages with original pages',
+            setup: () => autocracy.operations.blendPDFTextPages(
+                origin,
+                cachePDFText,
+                destination,
+                {
                     method: 'shell'
                 },
                 verbose,

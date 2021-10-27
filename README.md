@@ -11,7 +11,7 @@ Installing
 
 Alternatively, don't install it and just prepend the below commands with `npx`.
 
-You will also need to install two tools that Autocracy relies on to operate, [Tesseract](https://github.com/tesseract-ocr/tesseract) and [MuPDF](https://github.com/ArtifexSoftware/mupdf). On a Mac with Homebrew these can be installed with `brew install tesseract mupdf`.
+You will also need to install tools that Autocracy relies on to operate, [Tesseract](https://github.com/tesseract-ocr/tesseract), [MuPDF](https://github.com/ArtifexSoftware/mupdf), and [QPDF](https://github.com/qpdf/qpdf). On a Mac with Homebrew these can be installed with `brew install tesseract mupdf qpdf`.
 
 If possible you should install Tesseract v5, which is in alpha at time of writing, but is faster. Also if not using Homebrew check your installation includes the Tesseract fast training data for your desired languages, which can otherwise be downloaded [from here](https://github.com/tesseract-ocr/tessdata_fast).
 

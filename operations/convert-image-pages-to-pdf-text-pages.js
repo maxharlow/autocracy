@@ -16,12 +16,13 @@ async function initialise(origin, destination, options = { method: 'shell', lang
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
             const output = Tempy.file()
-            const command = `OMP_THREAD_LIMIT=1 tesseract -l ${options.language} --dpi ${options.density} --psm 11 "${escaped(item.input)}" ${output} pdf`
+            const command = `OMP_THREAD_LIMIT=1 tesseract -c textonly_pdf=1 -l ${options.language} --dpi ${options.density} --psm 11 "${escaped(item.input)}" ${output} pdf`
             try {
                 await execute(command)
                 await FSExtra.move(`${output}.pdf`, item.output)
             }
             catch (e) {
+                await FSExtra.remove(output)
                 const message = e.message.trim().split('\n').pop()
                 throw new Error(message)
             }

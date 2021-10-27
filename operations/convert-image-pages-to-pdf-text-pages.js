@@ -23,7 +23,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
             }
             catch (e) {
                 await FSExtra.remove(output)
-                const message = e.message.trim().split('\n').pop()
+                const message = e.message.trim().split('\n').pop().toLowerCase()
                 throw new Error(message)
             }
         }

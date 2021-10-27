@@ -75,6 +75,7 @@ async function initialise(origin, destination, options = { method: 'shell' }, ve
                     .filter(line => !line.match(/Command failed:|warning:|aborting process/))
                     .map(line => line.replace('error: ', ''))
                     .join(', ')
+                    .toLowerCase()
                 throw new Error(message)
             }
         }

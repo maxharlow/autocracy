@@ -25,6 +25,7 @@ async function initialise(origin, originText, destination, options = { method: '
                     .split('\n')
                     .find(line => line.match('qpdf:'))
                     .replace('qpdf: ', '')
+                    .toLowerCase()
                 throw new Error(message)
             }
         }

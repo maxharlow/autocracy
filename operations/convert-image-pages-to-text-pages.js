@@ -21,7 +21,7 @@ async function initialise(origin, destination, options = { method: 'shell', lang
                 await FSExtra.writeFile(item.output, result.stdout.replace(/\s+/g, ' '))
             }
             catch (e) {
-                const message = e.message.trim().split('\n').pop()
+                const message = e.message.trim().split('\n').pop().toLowerCase()
                 throw new Error(message)
             }
         }

@@ -17,6 +17,7 @@
         "mupdf-js": "1.0.x",
         "pdfjs": "2.4.x",
         "scramjet": "4.36.x",
+        "sharp": "0.29.x",
         "tempy": "2.0.x",
         "tesseract.js": "2.1.x",
         "yargs": "17.2.x"

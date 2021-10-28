@@ -31,6 +31,6 @@ Produce text files:
 
 In either case, origin should be a directory of PDF files. Destination should be the name of a directory that will be created containing the results.
 
-By default, Autocracy will first attempt to extract any tagged-text from within the PDF files. If tagged-text is found, it is used instead of OCRing, which is much slower. To disable this use the `--force-ocr` flag. The language expected in the documents defaults to English, but can be specified by passing the `--language` flag one of the language codes [from this page](https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html).
+By default, Autocracy will first attempt to extract any tagged-text from within the PDF files. If tagged-text is found, it is used instead of OCRing, which is much slower. To disable this use the `--force-ocr` flag. The `--preprocess` flag will do some processing to attempt to improve OCR quality. The language expected in the documents defaults to English, but can be specified by passing the `--language` flag one of the language codes [from this page](https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html).
 
 A directory named `.autocracy-cache` will be created to contain intermediate files. These can be used on subsequent invocations of Autocracy. You may wish to delete this directory though, as it can get quite large.

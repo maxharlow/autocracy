@@ -83,6 +83,7 @@ async function setup() {
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('f', { alias: 'force-ocr', type: 'boolean', describe: 'Do not use tagged-text even if it is available', default: false })
+            .option('p', { alias: 'preprocess', type: 'boolean', describe: 'Preprocess image files to attempt to improve OCR quality', default: false })
             .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find', default: 'eng' })
     })
     instructions.command('make-searchable', 'Extract or, if necessary, OCR each PDF, and output new PDFs with the text embedded', args => {
@@ -92,6 +93,7 @@ async function setup() {
             .positional('origin', { type: 'string', describe: 'Origin directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('f', { alias: 'force-ocr', type: 'boolean', describe: 'Do not use tagged-text even if it is available', default: false })
+            .option('p', { alias: 'preprocess', type: 'boolean', describe: 'Preprocess image files to attempt to improve OCR quality', default: false })
             .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find', default: 'eng' })
     })
     instructions.command('extract-pdf-to-text', false, args => {
@@ -126,6 +128,13 @@ async function setup() {
             .positional('destination', { type: 'string', describe: 'Destination directory' })
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
             .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
+    })
+    instructions.command('preprocess-image-pages', false, args => {
+        args
+            .usage('Usage: autocracy preprocess-image-pages <origin> <destination>')
+            .demandCommand(2, '')
+            .positional('origin', { type: 'string', describe: 'Origin directory' })
+            .positional('destination', { type: 'string', describe: 'Destination directory' })
     })
     instructions.command('convert-image-pages-to-text-pages', false, args => {
         args
@@ -180,11 +189,12 @@ async function setup() {
             const {
                 _: [, origin, destination],
                 forceOcr,
+                preprocess,
                 language,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = autocracy.getText(origin, destination, { forceOCR: forceOcr, language }, verbose, alert)
+            const procedures = autocracy.getText(origin, destination, { forceOCR: forceOcr, preprocess, language }, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()
@@ -196,11 +206,12 @@ async function setup() {
             const {
                 _: [, origin, destination],
                 forceOcr,
+                preprocess,
                 language,
                 verbose
             } = instructions.argv
             console.error('Starting up...')
-            const procedures = autocracy.makeSearchable(origin, destination, { forceOCR: forceOcr, language }, verbose, alert)
+            const procedures = autocracy.makeSearchable(origin, destination, { forceOCR: forceOcr, preprocess, language }, verbose, alert)
             await procedures.reduce(async (previous, procedure) => {
                 await previous
                 const process = await procedure.setup()
@@ -249,6 +260,16 @@ async function setup() {
             } = instructions.argv
             console.error('Starting up...')
             const process = await autocracy.operations.convertPDFToImagePages(origin, destination, { method, density }, verbose, alert)
+            const total = await process.length()
+            await process.run().each(progress('Working...', total)).whenEnd()
+        }
+        else if (command === 'preprocess-image-pages') {
+            const {
+                _: [, origin, destination],
+                verbose
+            } = instructions.argv
+            console.error('Starting up...')
+            const process = await autocracy.operations.preprocessImagePages(origin, destination, {}, verbose, alert)
             const total = await process.length()
             await process.run().each(progress('Working...', total)).whenEnd()
         }

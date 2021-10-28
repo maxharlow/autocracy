@@ -3,11 +3,13 @@ import autocracy from './../autocracy.js'
 function initialise(origin, destination, parameters, verbose, alert) {
     const options = {
         forceOCR: false,
+        preprocess: false,
         language: 'eng',
         ...parameters
     }
     const cacheUntagged = '.autocracy-cache/untagged'
     const cacheImagePages = '.autocracy-cache/image-pages'
+    const cacheImagePagesPreprocessed = '.autocracy-cache/image-pages-preprocessed'
     const cachePDFTextPages = '.autocracy-cache/pdf-text-pages'
     const cachePDFText = '.autocracy-cache/pdf-text'
     const density = 300
@@ -48,10 +50,22 @@ function initialise(origin, destination, parameters, verbose, alert) {
                 alert
             )
         },
+        options.preprocess && {
+            name: 'Preprocessing image pages...',
+            setup: () => autocracy.operations.preprocessImagePages(
+                cacheImagePages,
+                cacheImagePagesPreprocessed,
+                {
+                    originInitial: origin
+                },
+                verbose,
+                alert
+            )
+        },
         {
             name: 'Converting image pages to PDF text pages',
             setup: () => autocracy.operations.convertImagePagesToPDFTextPages(
-                cacheImagePages,
+                options.preprocess ? cacheImagePagesPreprocessed : cacheImagePages,
                 cachePDFTextPages,
                 {
                     originInitial: origin,

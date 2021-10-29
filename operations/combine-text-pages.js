@@ -1,12 +1,12 @@
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 
-async function initialise(origin, destination, parameters, verbose, alert) {
+async function initialise(origin, destination, parameters, alert) {
 
     const options = parameters
 
     async function listing(item) {
-        if (verbose) alert({
+        alert({
             operation: 'combine-text-pages',
             input: item.input,
             output: item.output,
@@ -14,7 +14,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
         })
         const inputExists = await FSExtra.exists(item.input)
         if (!inputExists) {
-            if (verbose) alert({
+            alert({
                 operation: 'combine-text-pages',
                 input: item.input,
                 output: item.output,
@@ -24,12 +24,12 @@ async function initialise(origin, destination, parameters, verbose, alert) {
         }
         const pagesUnsorted = await FSExtra.readdir(item.input)
         if (pagesUnsorted.length === 0) {
-            if (verbose) alert({
+            alert({
                 operation: 'combine-text-pages',
                 input: item.input,
                 output: item.output,
                 message: 'no pages found',
-                isError: true
+                importance: 'error'
             })
             return { ...item, skip: true } // no pages found to combine, skip
         }
@@ -41,7 +41,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
                     input: item.input,
                     output: item.output,
                     message: 'pagefiles missing',
-                    isError: true
+                    importance: 'error'
                 })
                 return { ...item, skip: true } // don't combine an incomplete set of pages
             }
@@ -49,7 +49,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
         const pages = pagesUnsorted.sort((a, b) => {
             return Number(a.replace(/[^0-9]/g, '')) - Number(b.replace(/[^0-9]/g, ''))
         })
-        if (verbose) alert({
+        alert({
             operation: 'combine-text-pages',
             input: item.input,
             output: item.output,
@@ -62,7 +62,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
         if (item.skip) return item
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
-            if (verbose) alert({
+            alert({
                 operation: 'combine-text-pages',
                 input: item.input,
                 output: item.output,
@@ -73,7 +73,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
         const textPages = await Promise.all(item.pages.map(page => FSExtra.readFile(`${origin}/${item.name}/${page}`, 'utf8')))
         const text = textPages.join(' ')
         await FSExtra.writeFile(item.output, text)
-        if (verbose) alert({
+        alert({
             operation: 'combine-text-pages',
             input: item.input,
             output: item.output,

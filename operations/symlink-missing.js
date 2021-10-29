@@ -1,12 +1,12 @@
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 
-async function initialise(origin, intermediate, destination, verbose, alert) {
+async function initialise(origin, intermediate, destination, alert) {
 
     async function symlink(item) {
         const intermediateExists = await FSExtra.exists(`${intermediate}/${item.name}`) // so tagged-text was found and extracted
         if (intermediateExists) {
-            if (verbose) alert({
+            alert({
                 operation: 'symlink-missing',
                 input: item.input,
                 output: item.output,
@@ -15,7 +15,7 @@ async function initialise(origin, intermediate, destination, verbose, alert) {
             return { ...item, skip: true }
         }
         await FSExtra.ensureSymlink(item.input, item.output)
-        if (verbose) alert({
+        alert({
             operation: 'symlink-missing',
             input: item.input,
             output: item.output,

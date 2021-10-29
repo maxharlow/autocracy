@@ -2,7 +2,7 @@ import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import Sharp from 'sharp'
 
-async function initialise(origin, destination, parameters, verbose, alert) {
+async function initialise(origin, destination, parameters, alert) {
 
     const options = {
         ...parameters
@@ -11,7 +11,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
     async function preprocess(item) {
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
-            if (verbose) alert({
+            alert({
                 operation: 'preprocess-image-pages',
                 input: item.input,
                 output: item.output,
@@ -21,7 +21,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
         }
         const inputExists = await FSExtra.exists(item.input)
         if (!inputExists) {
-            if (verbose) alert({
+            alert({
                 operation: 'preprocess-image-pages',
                 input: item.input,
                 output: item.output,
@@ -30,7 +30,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
             return { ...item, skip: true } // no input, skip
         }
         await FSExtra.ensureDir(`${destination}/${item.name}`)
-        if (verbose) alert({
+        alert({
             operation: 'preprocess-image-pages',
             input: item.input,
             output: item.output,
@@ -40,7 +40,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
             await Sharp(item.input)
                 .threshold()
                 .toFile(item.output)
-            if (verbose) alert({
+            alert({
                 operation: 'preprocess-image-pages',
                 input: item.input,
                 output: item.output,
@@ -54,7 +54,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
                 input: item.input,
                 output: item.output,
                 message: e.message,
-                isError: true
+                importance: 'error'
             })
             return { ...item, skip: true } // failed with error
         }

@@ -1,6 +1,6 @@
 import autocracy from './../autocracy.js'
 
-function initialise(origin, destination, parameters, verbose, alert) {
+function initialise(origin, destination, parameters, alert) {
     const options = {
         forceOCR: false,
         preprocess: false,
@@ -21,7 +21,6 @@ function initialise(origin, destination, parameters, verbose, alert) {
                 {
                     method: 'shell'
                 },
-                verbose,
                 alert
             )
         },
@@ -31,7 +30,6 @@ function initialise(origin, destination, parameters, verbose, alert) {
                 origin,
                 destination,
                 cacheUntagged,
-                verbose,
                 alert
             )
         },
@@ -45,7 +43,6 @@ function initialise(origin, destination, parameters, verbose, alert) {
                     method: 'shell',
                     density
                 },
-                verbose,
                 alert
             )
         },
@@ -57,7 +54,6 @@ function initialise(origin, destination, parameters, verbose, alert) {
                 {
                     originInitial: origin
                 },
-                verbose,
                 alert
             )
         },
@@ -72,7 +68,6 @@ function initialise(origin, destination, parameters, verbose, alert) {
                     language: options.language,
                     density
                 },
-                verbose,
                 alert
             )
         },
@@ -85,7 +80,6 @@ function initialise(origin, destination, parameters, verbose, alert) {
                     originInitial: origin,
                     originPrior: cacheImagePages
                 },
-                verbose,
                 alert
             )
         }

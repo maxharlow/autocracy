@@ -6,7 +6,7 @@ import Tempy from 'tempy'
 import ChildProcess from 'child_process'
 import MuPDF from 'mupdf-js'
 
-async function initialise(origin, destination, parameters, verbose, alert) {
+async function initialise(origin, destination, parameters, alert) {
 
     const options = {
         method: 'shell',
@@ -25,7 +25,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
             try {
                 await execute(command)
                 await FSExtra.move(output, `${item.output}`)
-                if (verbose) alert({
+                alert({
                     operation: 'convert-pdf-to-image-pages',
                     input: item.input,
                     output: item.output,
@@ -58,7 +58,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
             const output = Tempy.directory()
             const pagesOutput = Array.from({ length: pages }).map(async (_, index) => {
                 const page = index + 1
-                if (verbose) alert({
+                alert({
                     operation: 'convert-pdf-to-image-pages',
                     input: item.input,
                     output: item.output,
@@ -70,7 +70,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
             })
             await Promise.all(pagesOutput)
             await FSExtra.move(output, item.output)
-            if (verbose) alert({
+            alert({
                 operation: 'convert-pdf-to-image-pages',
                 input: item.input,
                 output: item.output,
@@ -90,7 +90,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
         const convert = async item => {
             const outputExists = await FSExtra.exists(item.output)
             if (outputExists) {
-                if (verbose) alert({
+                alert({
                     operation: 'convert-pdf-to-image-pages',
                     input: item.input,
                     output: item.output,
@@ -100,7 +100,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
             }
             const inputExists = await FSExtra.exists(item.input)
             if (!inputExists) {
-                if (verbose) alert({
+                alert({
                     operation: 'convert-pdf-to-image-pages',
                     input: item.input,
                     output: item.output,
@@ -108,7 +108,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
                 })
                 return { ...item, skip: true } // no input, skip
             }
-            if (verbose) alert({
+            alert({
                 operation: 'convert-pdf-to-image-pages',
                 input: item.input,
                 output: item.output,
@@ -124,7 +124,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
                     input: item.input,
                     output: item.output,
                     message: e.message,
-                    isError: true
+                    importance: 'error'
                 })
                 return { ...item, skip: true } // failed with error
             }

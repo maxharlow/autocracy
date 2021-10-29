@@ -4,7 +4,7 @@ import Scramjet from 'scramjet'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 
-async function initialise(origin, destination, parameters, verbose, alert) {
+async function initialise(origin, destination, parameters, alert) {
 
     const options = {
         method: 'shell',
@@ -43,14 +43,14 @@ async function initialise(origin, destination, parameters, verbose, alert) {
         const isTagged = await detector.run(item)
         if (isTagged) {
             await FSExtra.copy(item.input, item.output)
-            if (verbose) alert({
+            alert({
                 operation: 'copy-pdf-tagged',
                 input: item.input,
                 output: item.output,
                 message: 'done'
             })
         }
-        else if (verbose) alert({
+        else alert({
             operation: 'copy-pdf-tagged',
             input: item.input,
             output: item.output,

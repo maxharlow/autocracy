@@ -7,7 +7,7 @@ import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 import * as AWSTextract from '@aws-sdk/client-textract'
 
-async function initialise(origin, destination, parameters, verbose, alert) {
+async function initialise(origin, destination, parameters, alert) {
 
     const options = {
         method: 'shell',
@@ -95,7 +95,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
         const convert = async item => {
             const outputExists = await FSExtra.exists(item.output)
             if (outputExists) {
-                if (verbose) alert({
+                alert({
                     operation: 'convert-image-pages-to-text-pages',
                     input: item.input,
                     output: item.output,
@@ -105,7 +105,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
             }
             const inputExists = await FSExtra.exists(item.input)
             if (!inputExists) {
-                if (verbose) alert({
+                alert({
                     operation: 'convert-image-pages-to-text-pages',
                     input: item.input,
                     output: item.output,
@@ -114,7 +114,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
                 return { ...item, skip: true } // no input, skip
             }
             await FSExtra.ensureDir(`${destination}/${item.name}`)
-            if (verbose) alert({
+            alert({
                 operation: 'convert-image-pages-to-text-pages',
                 input: item.input,
                 output: item.output,
@@ -122,7 +122,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
             })
             try {
                 await converter.run(item)
-                if (verbose) alert({
+                alert({
                     operation: 'convert-image-pages-to-text-pages',
                     input: item.input,
                     output: item.output,
@@ -131,12 +131,23 @@ async function initialise(origin, destination, parameters, verbose, alert) {
                 return item
             }
             catch (e) {
+                if (e.message.startsWith('timed out')) {
+                    await FSExtra.writeFile(item.output, '')
+                    alert({
+                        operation: 'convert-image-pages-to-text-pages',
+                        input: item.input,
+                        output: item.output,
+                        message: e.message,
+                        importance: 'warning'
+                    })
+                    return item // timeouts aren't errors
+                }
                 alert({
                     operation: 'convert-image-pages-to-text-pages',
                     input: item.input,
                     output: item.output,
                     message: e.message,
-                    isError: true
+                    importance: 'error'
                 })
                 return { ...item, skip: true } // failed with error
             }

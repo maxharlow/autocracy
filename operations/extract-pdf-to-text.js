@@ -4,7 +4,7 @@ import Scramjet from 'scramjet'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 
-async function initialise(origin, destination, parameters, verbose, alert) {
+async function initialise(origin, destination, parameters, alert) {
 
     const options = {
         method: 'shell',
@@ -22,7 +22,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
                 const result = await execute(command)
                 const text = result.stdout.replace(/\s+/g, ' ')
                 if (text.trim() === '') {
-                    if (verbose) alert({
+                    alert({
                         operation: 'extract-pdf-to-text',
                         input: item.input,
                         output: item.output,
@@ -54,7 +54,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
         const extract = async item => {
             const outputExists = await FSExtra.exists(item.output)
             if (outputExists) {
-                if (verbose) alert({
+                alert({
                     operation: 'extract-pdf-to-text',
                     input: item.input,
                     output: item.output,
@@ -62,7 +62,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
                 })
                 return { ...item, skip: true } // already exists, skip
             }
-            if (verbose) alert({
+            alert({
                 operation: 'extract-pdf-to-text',
                 input: item.input,
                 output: item.output,
@@ -70,7 +70,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
             })
             try {
                 await extractor.run(item)
-                if (verbose) alert({
+                alert({
                     operation: 'extract-pdf-to-text',
                     input: item.input,
                     output: item.output,
@@ -84,7 +84,7 @@ async function initialise(origin, destination, parameters, verbose, alert) {
                     input: item.input,
                     output: item.output,
                     message: e.message,
-                    isError: true
+                    importance: 'error'
                 })
                 return { ...item, skip: true } // failed with error
             }

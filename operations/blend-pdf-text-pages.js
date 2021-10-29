@@ -5,7 +5,7 @@ import Lookpath from 'lookpath'
 import Tempy from 'tempy'
 import ChildProcess from 'child_process'
 
-async function initialise(origin, originText, destination, parameters, verbose, alert) {
+async function initialise(origin, originText, destination, parameters, alert) {
 
     const options = {
         method: 'shell',
@@ -46,7 +46,7 @@ async function initialise(origin, originText, destination, parameters, verbose, 
         const blend = async item => {
             const outputExists = await FSExtra.exists(item.output)
             if (outputExists) {
-                if (verbose) alert({
+                alert({
                     operation: 'blend-pdf-text-pages',
                     input: item.input,
                     output: item.output,
@@ -54,7 +54,7 @@ async function initialise(origin, originText, destination, parameters, verbose, 
                 })
                 return { ...item, skip: true } // already exists, skip
             }
-            if (verbose) alert({
+            alert({
                 operation: 'blend-pdf-text-pages',
                 input: item.input,
                 output: item.output,
@@ -62,7 +62,7 @@ async function initialise(origin, originText, destination, parameters, verbose, 
             })
             try {
                 await blender.run(item)
-                if (verbose) alert({
+                alert({
                     operation: 'blend-pdf-text-pages',
                     input: item.input,
                     output: item.output,
@@ -76,7 +76,7 @@ async function initialise(origin, originText, destination, parameters, verbose, 
                     input: item.input,
                     output: item.output,
                     message: e.message,
-                    isError: true
+                    importance: 'error'
                 })
                 return { ...item, skip: true } // failed with error
             }

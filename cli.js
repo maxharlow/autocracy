@@ -3,7 +3,7 @@ import Yargs from 'yargs'
 import Chalk from 'chalk'
 import autocracy from './autocracy.js'
 
-function renderer() {
+function renderer(verbose) {
     let isFinal = false
     let isDirty = true
     let alerts = {}
@@ -32,7 +32,7 @@ function renderer() {
                 Chalk.blue(' → '),
                 outputTruncated,
                 ': ',
-                details.isError ? Chalk.red.bold(details.message)
+                details.importance === 'error' ? Chalk.red.bold(details.message)
                     : details.message.endsWith('...') ? Chalk.yellow(details.message)
                     : details.message.toLowerCase().startsWith('done') ? Chalk.green(details.message)
                     : Chalk.magenta(details.message)
@@ -60,6 +60,7 @@ function renderer() {
         }
     }
     const alert = details => {
+        if (!verbose && !details.importance) return
         const key = [details.operation, details.input, details.output].filter(x => x).join('-')
         alerts[key] = details
         isDirty = true
@@ -199,7 +200,7 @@ async function setup() {
     })
     if (instructions.argv._.length === 0) instructions.showHelp().exit(0)
     const command = instructions.argv._[0]
-    const { alert, progress, finalise } = renderer()
+    const { alert, progress, finalise } = renderer(instructions.argv.verbose)
     console.error('Starting up...')
     try {
         if (command === 'get-text') {
@@ -207,11 +208,10 @@ async function setup() {
                 _: [, origin, destination],
                 forceOcr,
                 preprocess,
-                language,
-                verbose
+                language
             } = instructions.argv
             const parameters = { forceOCR: forceOcr, preprocess, language }
-            const segments = autocracy.getText(origin, destination, parameters, verbose, alert)
+            const segments = autocracy.getText(origin, destination, parameters, alert)
             await runProcess(segments, progress)
         }
         else if (command === 'make-searchable') {
@@ -219,59 +219,53 @@ async function setup() {
                 _: [, origin, destination],
                 forceOcr,
                 preprocess,
-                language,
-                verbose
+                language
             } = instructions.argv
             const parameters = { forceOCR: forceOcr, preprocess, language }
-            const segments = autocracy.makeSearchable(origin, destination, parameters, verbose, alert)
+            const segments = autocracy.makeSearchable(origin, destination, parameters, alert)
             await runProcess(segments, progress)
         }
         else if (command === 'extract-pdf-to-text') {
             const {
                 _: [, origin, destination],
-                method,
-                verbose
+                method
             } = instructions.argv
             const parameters = { method }
-            const operation = await autocracy.operations.extractPDFToText(origin, destination, parameters, verbose, alert)
+            const operation = await autocracy.operations.extractPDFToText(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'copy-pdf-tagged') {
             const {
                 _: [, origin, destination],
-                method,
-                verbose
+                method
             } = instructions.argv
             const parameters = { method }
-            const operation = await autocracy.operations.copyPDFTagged(origin, destination, parameters, verbose, alert)
+            const operation = await autocracy.operations.copyPDFTagged(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'symlink-missing') {
             const {
-                _: [, origin, intermediate, destination],
-                verbose
+                _: [, origin, intermediate, destination]
             } = instructions.argv
-            const operation = await autocracy.operations.symlinkMissing(origin, intermediate, destination, verbose, alert)
+            const operation = await autocracy.operations.symlinkMissing(origin, intermediate, destination, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'convert-pdf-to-image-pages') {
             const {
                 _: [, origin, destination],
                 method,
-                density,
-                verbose
+                density
             } = instructions.argv
             const parameters = { method, density }
-            const operation = await autocracy.operations.convertPDFToImagePages(origin, destination, parameters, verbose, alert)
+            const operation = await autocracy.operations.convertPDFToImagePages(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'preprocess-image-pages') {
             const {
-                _: [, origin, destination],
-                verbose
+                _: [, origin, destination]
             } = instructions.argv
             const parameters = {}
-            const operation = await autocracy.operations.preprocessImagePages(origin, destination, parameters, verbose, alert)
+            const operation = await autocracy.operations.preprocessImagePages(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'convert-image-pages-to-text-pages') {
@@ -280,11 +274,10 @@ async function setup() {
                 method,
                 language,
                 density,
-                awsRegion,
-                verbose
+                awsRegion
             } = instructions.argv
             const parameters = { method, language, density, awsRegion }
-            const operation = await autocracy.operations.convertImagePagesToTextPages(origin, destination, parameters, verbose, alert)
+            const operation = await autocracy.operations.convertImagePagesToTextPages(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'convert-image-pages-to-pdf-text-pages') {
@@ -292,40 +285,36 @@ async function setup() {
                 _: [, origin, destination],
                 method,
                 language,
-                density,
-                verbose
+                density
             } = instructions.argv
             const parameters = { method, language, density }
-            const operation = await autocracy.operations.convertImagePagesToPDFPages(origin, destination, parameters, verbose, alert)
+            const operation = await autocracy.operations.convertImagePagesToPDFPages(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'combine-text-pages') {
             const {
-                _: [, origin, destination],
-                verbose
+                _: [, origin, destination]
             } = instructions.argv
             const parameters = {}
-            const operation = await autocracy.operations.combineTextPages(origin, destination, parameters, verbose, alert)
+            const operation = await autocracy.operations.combineTextPages(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'combine-pdf-pages') {
             const {
                 _: [, origin, destination],
-                method,
-                verbose
+                method
             } = instructions.argv
             const parameters = { method }
-            const operation = await autocracy.operations.combinePDFPages(origin, destination, parameters, verbose, alert)
+            const operation = await autocracy.operations.combinePDFPages(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'blend-pdf-text-pages') {
             const {
                 _: [, origin, originText, destination],
-                method,
-                verbose
+                method
             } = instructions.argv
             const parameters =  { method }
-            const operation = await autocracy.operations.blendPDFTextPages(origin, originText, destination, parameters, verbose, alert)
+            const operation = await autocracy.operations.blendPDFTextPages(origin, originText, destination, parameters, alert)
             await runOperation(operation, progress)
         }
         else {

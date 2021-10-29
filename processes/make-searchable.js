@@ -13,7 +13,7 @@ function initialise(origin, destination, parameters, verbose, alert) {
     const cachePDFTextPages = '.autocracy-cache/pdf-text-pages'
     const cachePDFText = '.autocracy-cache/pdf-text'
     const density = 300
-    const operations = [
+    const segments = [
         !options.forceOCR && {
             name: 'Copying already-tagged PDFs',
             setup: () => autocracy.operations.copyPDFTagged(
@@ -105,7 +105,7 @@ function initialise(origin, destination, parameters, verbose, alert) {
             )
         }
     ]
-    return operations.filter(x => x)
+    return segments.filter(x => x)
 }
 
 export default initialise

@@ -12,7 +12,7 @@ function initialise(origin, destination, parameters, verbose, alert) {
     const cacheImagePagesPreprocessed = '.autocracy-cache/image-pages-preprocessed'
     const cacheTextPages = '.autocracy-cache/text-pages'
     const density = 300
-    const operations = [
+    const segments = [
         !options.forceOCR && {
             name: 'Extracting PDFs to full texts',
             setup: () => autocracy.operations.extractPDFToText(
@@ -90,7 +90,7 @@ function initialise(origin, destination, parameters, verbose, alert) {
             )
         }
     ]
-    return operations.filter(x => x)
+    return segments.filter(x => x)
 }
 
 export default initialise

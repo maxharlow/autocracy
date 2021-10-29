@@ -69,6 +69,22 @@ function renderer() {
     return { progress, alert, finalise }
 }
 
+function runProcess(segments, progress) {
+    const longest = Math.max(...segments.map(segment => segment.name.length))
+    return segments.reduce(async (previous, segment) => {
+        await previous
+        const operation = await segment.setup()
+        const total = await operation.length()
+        return operation.run().each(progress(`${segment.name}...`.padEnd(longest + 3, ' '), total)).whenEnd()
+    }, Promise.resolve())
+}
+
+async function runOperation(operation, progress) {
+    const total = await operation.length()
+    await operation.run().each(progress('Working...', total)).whenEnd()
+    if (operation.terminate) await operation.terminate()
+}
+
 async function setup() {
     const instructions = Yargs(Process.argv.slice(2))
         .usage('Usage: autocracy <command>')
@@ -184,6 +200,7 @@ async function setup() {
     if (instructions.argv._.length === 0) instructions.showHelp().exit(0)
     const command = instructions.argv._[0]
     const { alert, progress, finalise } = renderer()
+    console.error('Starting up...')
     try {
         if (command === 'get-text') {
             const {
@@ -193,14 +210,9 @@ async function setup() {
                 language,
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const procedures = autocracy.getText(origin, destination, { forceOCR: forceOcr, preprocess, language }, verbose, alert)
-            await procedures.reduce(async (previous, procedure) => {
-                await previous
-                const process = await procedure.setup()
-                const total = await process.length()
-                return process.run().each(progress(`${procedure.name}...`.padEnd(42, ' '), total)).whenEnd()
-            }, Promise.resolve())
+            const parameters = { forceOCR: forceOcr, preprocess, language }
+            const segments = autocracy.getText(origin, destination, parameters, verbose, alert)
+            await runProcess(segments, progress)
         }
         else if (command === 'make-searchable') {
             const {
@@ -210,14 +222,9 @@ async function setup() {
                 language,
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const procedures = autocracy.makeSearchable(origin, destination, { forceOCR: forceOcr, preprocess, language }, verbose, alert)
-            await procedures.reduce(async (previous, procedure) => {
-                await previous
-                const process = await procedure.setup()
-                const total = await process.length()
-                return process.run().each(progress(`${procedure.name}...`.padEnd(46, ' '), total)).whenEnd()
-            }, Promise.resolve())
+            const parameters = { forceOCR: forceOcr, preprocess, language }
+            const segments = autocracy.makeSearchable(origin, destination, parameters, verbose, alert)
+            await runProcess(segments, progress)
         }
         else if (command === 'extract-pdf-to-text') {
             const {
@@ -225,10 +232,9 @@ async function setup() {
                 method,
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const process = await autocracy.operations.extractPDFToText(origin, destination, { method }, verbose, alert)
-            const total = await process.length()
-            await process.run().each(progress('Working...', total)).whenEnd()
+            const parameters = { method }
+            const operation = await autocracy.operations.extractPDFToText(origin, destination, parameters, verbose, alert)
+            await runOperation(operation, progress)
         }
         else if (command === 'copy-pdf-tagged') {
             const {
@@ -236,20 +242,17 @@ async function setup() {
                 method,
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const process = await autocracy.operations.copyPDFTagged(origin, destination, { method }, verbose, alert)
-            const total = await process.length()
-            await process.run().each(progress('Working...', total)).whenEnd()
+            const parameters = { method }
+            const operation = await autocracy.operations.copyPDFTagged(origin, destination, parameters, verbose, alert)
+            await runOperation(operation, progress)
         }
         else if (command === 'symlink-missing') {
             const {
                 _: [, origin, intermediate, destination],
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const process = await autocracy.operations.symlinkMissing(origin, intermediate, destination, verbose, alert)
-            const total = await process.length()
-            await process.run().each(progress('Working...', total)).whenEnd()
+            const operation = await autocracy.operations.symlinkMissing(origin, intermediate, destination, verbose, alert)
+            await runOperation(operation, progress)
         }
         else if (command === 'convert-pdf-to-image-pages') {
             const {
@@ -258,20 +261,18 @@ async function setup() {
                 density,
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const process = await autocracy.operations.convertPDFToImagePages(origin, destination, { method, density }, verbose, alert)
-            const total = await process.length()
-            await process.run().each(progress('Working...', total)).whenEnd()
+            const parameters = { method, density }
+            const operation = await autocracy.operations.convertPDFToImagePages(origin, destination, parameters, verbose, alert)
+            await runOperation(operation, progress)
         }
         else if (command === 'preprocess-image-pages') {
             const {
                 _: [, origin, destination],
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const process = await autocracy.operations.preprocessImagePages(origin, destination, {}, verbose, alert)
-            const total = await process.length()
-            await process.run().each(progress('Working...', total)).whenEnd()
+            const parameters = {}
+            const operation = await autocracy.operations.preprocessImagePages(origin, destination, parameters, verbose, alert)
+            await runOperation(operation, progress)
         }
         else if (command === 'convert-image-pages-to-text-pages') {
             const {
@@ -282,11 +283,9 @@ async function setup() {
                 awsRegion,
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const process = await autocracy.operations.convertImagePagesToTextPages(origin, destination, { method, language, density, awsRegion }, verbose, alert)
-            const total = await process.length()
-            await process.run().each(progress('Working...', total)).whenEnd()
-            await process.terminate()
+            const parameters = { method, language, density, awsRegion }
+            const operation = await autocracy.operations.convertImagePagesToTextPages(origin, destination, parameters, verbose, alert)
+            await runOperation(operation, progress)
         }
         else if (command === 'convert-image-pages-to-pdf-text-pages') {
             const {
@@ -296,21 +295,18 @@ async function setup() {
                 density,
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const process = await autocracy.operations.convertImagePagesToPDFPages(origin, destination, { method, language, density }, verbose, alert)
-            const total = await process.length()
-            await process.run().each(progress('Working...', total)).whenEnd()
-            await process.terminate()
+            const parameters = { method, language, density }
+            const operation = await autocracy.operations.convertImagePagesToPDFPages(origin, destination, parameters, verbose, alert)
+            await runOperation(operation, progress)
         }
         else if (command === 'combine-text-pages') {
             const {
                 _: [, origin, destination],
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const process = await autocracy.operations.combineTextPages(origin, destination, {}, verbose, alert)
-            const total = await process.length()
-            await process.run().each(progress('Working...', total)).whenEnd()
+            const parameters = {}
+            const operation = await autocracy.operations.combineTextPages(origin, destination, parameters, verbose, alert)
+            await runOperation(operation, progress)
         }
         else if (command === 'combine-pdf-pages') {
             const {
@@ -318,10 +314,9 @@ async function setup() {
                 method,
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const process = await autocracy.operations.combinePDFPages(origin, destination, { method }, verbose, alert)
-            const total = await process.length()
-            await process.run().each(progress('Working...', total)).whenEnd()
+            const parameters = { method }
+            const operation = await autocracy.operations.combinePDFPages(origin, destination, parameters, verbose, alert)
+            await runOperation(operation, progress)
         }
         else if (command === 'blend-pdf-text-pages') {
             const {
@@ -329,10 +324,9 @@ async function setup() {
                 method,
                 verbose
             } = instructions.argv
-            console.error('Starting up...')
-            const process = await autocracy.operations.blendPDFTextPages(origin, originText, destination, { method }, verbose, alert)
-            const total = await process.length()
-            await process.run().each(progress('Working...', total)).whenEnd()
+            const parameters =  { method }
+            const operation = await autocracy.operations.blendPDFTextPages(origin, originText, destination, parameters, verbose, alert)
+            await runOperation(operation, progress)
         }
         else {
             throw new Error(`${command}: unknown command`)

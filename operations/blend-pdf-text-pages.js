@@ -37,50 +37,51 @@ async function initialise(origin, originText, destination, parameters, alert) {
         return { run }
     }
 
-    async function setup() {
-        await FSExtra.ensureDir(destination)
+    async function blend(item) {
         const blenders = {
             shell: blenderShell
         }
         const blender = await blenders[options.method]()
-        const blend = async item => {
-            const outputExists = await FSExtra.exists(item.output)
-            if (outputExists) {
-                alert({
-                    operation: 'blend-pdf-text-pages',
-                    input: item.input,
-                    output: item.output,
-                    message: 'output exists'
-                })
-                return { ...item, skip: true } // already exists, skip
-            }
+        const outputExists = await FSExtra.exists(item.output)
+        if (outputExists) {
             alert({
                 operation: 'blend-pdf-text-pages',
                 input: item.input,
                 output: item.output,
-                message: 'blending...'
+                message: 'output exists'
             })
-            try {
-                await blender.run(item)
-                alert({
-                    operation: 'blend-pdf-text-pages',
-                    input: item.input,
-                    output: item.output,
-                    message: 'done'
-                })
-                return item
-            }
-            catch (e) {
-                alert({
-                    operation: 'blend-pdf-text-pages',
-                    input: item.input,
-                    output: item.output,
-                    message: e.message,
-                    importance: 'error'
-                })
-                return { ...item, skip: true } // failed with error
-            }
+            return { ...item, skip: true } // already exists, skip
         }
+        alert({
+            operation: 'blend-pdf-text-pages',
+            input: item.input,
+            output: item.output,
+            message: 'blending...'
+        })
+        try {
+            await blender.run(item)
+            alert({
+                operation: 'blend-pdf-text-pages',
+                input: item.input,
+                output: item.output,
+                message: 'done'
+            })
+            return item
+        }
+        catch (e) {
+            alert({
+                operation: 'blend-pdf-text-pages',
+                input: item.input,
+                output: item.output,
+                message: e.message,
+                importance: 'error'
+            })
+            return { ...item, skip: true } // failed with error
+        }
+    }
+
+    async function setup() {
+        await FSExtra.ensureDir(destination)
         const source = () => {
             const listing = FSExtra.opendir(origin)
             return Scramjet.DataStream.from(listing).map(entry => {

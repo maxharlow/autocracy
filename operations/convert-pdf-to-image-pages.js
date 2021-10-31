@@ -80,55 +80,56 @@ async function initialise(origin, destination, parameters, alert) {
         return { run }
     }
 
-    async function setup() {
-        await FSExtra.ensureDir(destination)
+    async function convert(item) {
         const converters = {
             shell: converterShell,
             library: converterLibrary
         }
         const converter = await converters[options.method]()
-        const convert = async item => {
-            const outputExists = await FSExtra.exists(item.output)
-            if (outputExists) {
-                alert({
-                    operation: 'convert-pdf-to-image-pages',
-                    input: item.input,
-                    output: item.output,
-                    message: 'output exists'
-                })
-                return { ...item, skip: true } // already exists, skip
-            }
-            const inputExists = await FSExtra.exists(item.input)
-            if (!inputExists) {
-                alert({
-                    operation: 'convert-pdf-to-image-pages',
-                    input: item.input,
-                    output: item.output,
-                    message: 'no input'
-                })
-                return { ...item, skip: true } // no input, skip
-            }
+        const outputExists = await FSExtra.exists(item.output)
+        if (outputExists) {
             alert({
                 operation: 'convert-pdf-to-image-pages',
                 input: item.input,
                 output: item.output,
-                message: 'converting...'
+                message: 'output exists'
             })
-            try {
-                await converter.run(item)
-                return item
-            }
-            catch (e) {
-                alert({
-                    operation: 'convert-pdf-to-image-pages',
-                    input: item.input,
-                    output: item.output,
-                    message: e.message,
-                    importance: 'error'
-                })
-                return { ...item, skip: true } // failed with error
-            }
+            return { ...item, skip: true } // already exists, skip
         }
+        const inputExists = await FSExtra.exists(item.input)
+        if (!inputExists) {
+            alert({
+                operation: 'convert-pdf-to-image-pages',
+                input: item.input,
+                output: item.output,
+                message: 'no input'
+            })
+            return { ...item, skip: true } // no input, skip
+        }
+        alert({
+            operation: 'convert-pdf-to-image-pages',
+            input: item.input,
+            output: item.output,
+            message: 'converting...'
+        })
+        try {
+            await converter.run(item)
+            return item
+        }
+        catch (e) {
+            alert({
+                operation: 'convert-pdf-to-image-pages',
+                input: item.input,
+                output: item.output,
+                message: e.message,
+                importance: 'error'
+            })
+            return { ...item, skip: true } // failed with error
+        }
+    }
+
+    async function setup() {
+        await FSExtra.ensureDir(destination)
         const source = () => {
             const listing = FSExtra.opendir(options.originInitial || origin)
             return Scramjet.DataStream.from(listing).map(entry => {

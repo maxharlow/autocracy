@@ -102,52 +102,53 @@ async function initialise(origin, destination, parameters, alert) {
         return { run }
     }
 
-    async function setup() {
-        await FSExtra.ensureDir(destination)
+    async function combine(item) {
         const combiners = {
             shell: combinerShell,
             library: combinerLibrary // slightly slower, has a 2GB limit for output files
         }
         const combiner = await combiners[options.method]()
-        const combine = async item => {
-            if (item.skip) return item
-            const outputExists = await FSExtra.exists(item.output)
-            if (outputExists) {
-                alert({
-                    operation: 'combine-pdf-pages',
-                    input: item.input,
-                    output: item.output,
-                    message: 'output exists'
-                })
-                return { ...item, skip: true } // already exists, skip
-            }
+        if (item.skip) return item
+        const outputExists = await FSExtra.exists(item.output)
+        if (outputExists) {
             alert({
                 operation: 'combine-pdf-pages',
                 input: item.input,
                 output: item.output,
-                message: 'combining...'
+                message: 'output exists'
             })
-            try {
-                await combiner.run(item)
-                alert({
-                    operation: 'combine-pdf-pages',
-                    input: item.input,
-                    output: item.output,
-                    message: 'done'
-                })
-                return item
-            }
-            catch (e) {
-                alert({
-                    operation: 'combine-pdf-pages',
-                    input: item.input,
-                    output: item.output,
-                    message: e.message,
-                    importance: 'error'
-                })
-                return { ...item, skip: true } // failed with error
-            }
+            return { ...item, skip: true } // already exists, skip
         }
+        alert({
+            operation: 'combine-pdf-pages',
+            input: item.input,
+            output: item.output,
+            message: 'combining...'
+        })
+        try {
+            await combiner.run(item)
+            alert({
+                operation: 'combine-pdf-pages',
+                input: item.input,
+                output: item.output,
+                message: 'done'
+            })
+            return item
+        }
+        catch (e) {
+            alert({
+                operation: 'combine-pdf-pages',
+                input: item.input,
+                output: item.output,
+                message: e.message,
+                importance: 'error'
+            })
+            return { ...item, skip: true } // failed with error
+        }
+    }
+
+    async function setup() {
+        await FSExtra.ensureDir(destination)
         const source = () => {
             const listing = FSExtra.opendir(options.originInitial || origin)
             return Scramjet.DataStream.from(listing).map(entry => {

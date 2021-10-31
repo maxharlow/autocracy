@@ -42,14 +42,47 @@ async function initialise(origin, destination, parameters, alert) {
                 throw new Error(message)
             }
         }
-        return { run }
+        return run
     }
 
-    async function extract(item) {
-        const extractors = {
+    async function extract() {
+        const methods = {
             shell: extractorShell
         }
-        const extractor = await extractors[options.method]()
+        const method = await methods[options.method]()
+        const run = async item => {
+            if (item.skip) return item
+            alert({
+                operation: 'extract-pdf-to-text',
+                input: item.input,
+                output: item.output,
+                message: 'extracting...'
+            })
+            try {
+                await method(item)
+                alert({
+                    operation: 'extract-pdf-to-text',
+                    input: item.input,
+                    output: item.output,
+                    message: 'done'
+                })
+                return item
+            }
+            catch (e) {
+                alert({
+                    operation: 'extract-pdf-to-text',
+                    input: item.input,
+                    output: item.output,
+                    message: e.message,
+                    importance: 'error'
+                })
+                return { ...item, skip: true } // failed with error
+            }
+        }
+        return run
+    }
+
+    async function check(item) {
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
             alert({
@@ -60,36 +93,12 @@ async function initialise(origin, destination, parameters, alert) {
             })
             return { ...item, skip: true } // already exists, skip
         }
-        alert({
-            operation: 'extract-pdf-to-text',
-            input: item.input,
-            output: item.output,
-            message: 'extracting...'
-        })
-        try {
-            await extractor.run(item)
-            alert({
-                operation: 'extract-pdf-to-text',
-                input: item.input,
-                output: item.output,
-                message: 'done'
-            })
-            return item
-        }
-        catch (e) {
-            alert({
-                operation: 'extract-pdf-to-text',
-                input: item.input,
-                output: item.output,
-                message: e.message,
-                importance: 'error'
-            })
-            return { ...item, skip: true } // failed with error
-        }
+        return item
     }
 
     async function setup() {
         await FSExtra.ensureDir(destination)
+        const extractor = await extract()
         const source = () => {
             const listing = FSExtra.opendir(options.originInitial || origin)
             return Scramjet.DataStream.from(listing).map(entry => {
@@ -102,7 +111,7 @@ async function initialise(origin, destination, parameters, alert) {
             }).filter(x => x)
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(extract)
+        const run = () => source().unorder(check).unorder(extractor)
         return { run, length }
     }
 

@@ -18,6 +18,7 @@ async function initialise(origin, originText, destination, parameters, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
+            if (item.skip) return item
             const output = Tempy.file()
             const command = `qpdf "${escaped(item.inputText)}" --overlay "${escaped(item.input)}" -- ${output}`
             try {
@@ -34,14 +35,46 @@ async function initialise(origin, originText, destination, parameters, alert) {
                 throw new Error(message)
             }
         }
-        return { run }
+        return run
     }
 
-    async function blend(item) {
-        const blenders = {
+    async function blender() {
+        const methods = {
             shell: blenderShell
         }
-        const blender = await blenders[options.method]()
+        const method = await methods[options.method]()
+        const run = async item => {
+            alert({
+                operation: 'blend-pdf-text-pages',
+                input: item.input,
+                output: item.output,
+                message: 'blending...'
+            })
+            try {
+                await method(item)
+                alert({
+                    operation: 'blend-pdf-text-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: 'done'
+                })
+                return item
+            }
+            catch (e) {
+                alert({
+                    operation: 'blend-pdf-text-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: e.message,
+                    importance: 'error'
+                })
+                return { ...item, skip: true } // failed with error
+            }
+        }
+        return run
+    }
+
+    async function check(item) {
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
             alert({
@@ -52,36 +85,12 @@ async function initialise(origin, originText, destination, parameters, alert) {
             })
             return { ...item, skip: true } // already exists, skip
         }
-        alert({
-            operation: 'blend-pdf-text-pages',
-            input: item.input,
-            output: item.output,
-            message: 'blending...'
-        })
-        try {
-            await blender.run(item)
-            alert({
-                operation: 'blend-pdf-text-pages',
-                input: item.input,
-                output: item.output,
-                message: 'done'
-            })
-            return item
-        }
-        catch (e) {
-            alert({
-                operation: 'blend-pdf-text-pages',
-                input: item.input,
-                output: item.output,
-                message: e.message,
-                importance: 'error'
-            })
-            return { ...item, skip: true } // failed with error
-        }
+        return item
     }
 
     async function setup() {
         await FSExtra.ensureDir(destination)
+        const blend = await blender()
         const source = () => {
             const listing = FSExtra.opendir(origin)
             return Scramjet.DataStream.from(listing).map(entry => {
@@ -94,7 +103,7 @@ async function initialise(origin, originText, destination, parameters, alert) {
                 }
             }).filter(x => x)
         }
-        const run = () => source().unorder(blend)
+        const run = () => source().unorder(check).unorder(blend)
         const length = () => source().reduce(a => a + 1, 0)
         return { run, length }
     }

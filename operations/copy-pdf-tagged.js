@@ -32,15 +32,15 @@ async function initialise(origin, destination, parameters, alert) {
                 throw new Error(message)
             }
         }
-        return { run }
+        return run
     }
 
     async function copyMaybe(item) {
-        const detectors = {
+        const methods = {
             shell: detectorShell
         }
-        const detector = await detectors[options.method]()
-        const isTagged = await detector.run(item)
+        const method = await methods[options.method]()
+        const isTagged = await method(item)
         if (isTagged) {
             await FSExtra.copy(item.input, item.output)
             alert({

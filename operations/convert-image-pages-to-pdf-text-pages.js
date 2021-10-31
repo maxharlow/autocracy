@@ -69,16 +69,53 @@ async function initialise(origin, destination, parameters, alert) {
         }
     }
 
-    async function convert(item) {
-        const converters = {
+    async function converter() {
+        const methods = {
             library: converterLibrary, // much slower
             shell: converterShell
         }
-        const converter = await converters[options.method]()
+        const method = await methods[options.method]()
+        const run = async item => {
+            if (item.skip) return item
+            await FSExtra.ensureDir(`${destination}/${item.name}`)
+            alert({
+                operation: 'convert-image-pages-to-pdf-text-pages',
+                input: item.input,
+                output: item.output,
+                message: 'converting...'
+            })
+            try {
+                await method.run(item)
+                alert({
+                    operation: 'convert-image-pages-to-pdf-text-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: 'done'
+                })
+                return item
+            }
+            catch (e) {
+                alert({
+                    operation: 'convert-image-pages-to-pdf-text-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: e.message,
+                    importance: 'error'
+                })
+                return { ...item, skip: true } // failed with error
+            }
+        }
+        return {
+            run,
+            terminate: method.terminate
+        }
+    }
+
+    async function check(item) {
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
             alert({
-                operation: 'convert-image-pages-to-pdf-pages',
+                operation: 'convert-image-pages-to-pdf-text-pages',
                 input: item.input,
                 output: item.output,
                 message: 'output exists'
@@ -88,44 +125,19 @@ async function initialise(origin, destination, parameters, alert) {
         const inputExists = await FSExtra.exists(item.input)
         if (!inputExists) {
             alert({
-                operation: 'convert-image-pages-to-pdf-pages',
+                operation: 'convert-image-pages-to-pdf-text-pages',
                 input: item.input,
                 output: item.output,
                 message: 'no input'
             })
             return { ...item, skip: true } // no input, skip
         }
-        await FSExtra.ensureDir(`${destination}/${item.name}`)
-        alert({
-            operation: 'convert-image-pages-to-pdf-pages',
-            input: item.input,
-            output: item.output,
-            message: 'converting...'
-        })
-        try {
-            await converter.run(item)
-            alert({
-                operation: 'convert-image-pages-to-pdf-pages',
-                input: item.input,
-                output: item.output,
-                message: 'done'
-            })
-            return item
-        }
-        catch (e) {
-            alert({
-                operation: 'convert-image-pages-to-pdf-pages',
-                input: item.input,
-                output: item.output,
-                message: e.message,
-                importance: 'error'
-            })
-            return { ...item, skip: true } // failed with error
-        }
+        return item
     }
 
     async function setup() {
         await FSExtra.ensureDir(destination)
+        const convert = await converter()
         const source = () => {
             const listing = FSExtra.opendir(options.originInitial || origin)
             return Scramjet.DataStream.from(listing).flatMap(async entry => {
@@ -143,8 +155,12 @@ async function initialise(origin, destination, parameters, alert) {
             })
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().setOptions({ maxParallel: OS.cpus().length }).unorder(convert)
-        return { run, length, terminate: converter.terminate }
+        const run = () => source().unorder(check).setOptions({ maxParallel: OS.cpus().length }).unorder(convert.run)
+        return {
+            run,
+            length,
+            terminate: convert.terminate
+        }
     }
 
     return setup()

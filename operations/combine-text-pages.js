@@ -3,25 +3,42 @@ import Scramjet from 'scramjet'
 
 async function initialise(origin, destination, parameters, alert) {
 
-    const options = parameters
+    const options = {
+        ...parameters
+    }
+
+    async function read(item) {
+        if (item.skip) return item
+        const outputExists = await FSExtra.exists(item.output)
+        if (outputExists) {
+            alert({
+                operation: 'combine-text-pages',
+                input: item.input,
+                output: item.output,
+                message: 'output exists'
+            })
+            return { ...item, skip: true } // already exists, skip
+        }
+        const textPages = await Promise.all(item.pages.map(page => FSExtra.readFile(`${origin}/${item.name}/${page}`, 'utf8')))
+        const text = textPages.join(' ')
+        await FSExtra.writeFile(item.output, text)
+        alert({
+            operation: 'combine-text-pages',
+            input: item.input,
+            output: item.output,
+            message: 'done'
+        })
+        return item
+    }
 
     async function listing(item) {
+        if (item.skip) return item
         alert({
             operation: 'combine-text-pages',
             input: item.input,
             output: item.output,
             message: 'combining...'
         })
-        const inputExists = await FSExtra.exists(item.input)
-        if (!inputExists) {
-            alert({
-                operation: 'combine-text-pages',
-                input: item.input,
-                output: item.output,
-                message: 'no input'
-            })
-            return { ...item, skip: true } // no file to combine, skip
-        }
         const pagesUnsorted = await FSExtra.readdir(item.input)
         if (pagesUnsorted.length === 0) {
             alert({
@@ -58,27 +75,17 @@ async function initialise(origin, destination, parameters, alert) {
         return { ...item, pages }
     }
 
-    async function read(item) {
-        if (item.skip) return item
-        const outputExists = await FSExtra.exists(item.output)
-        if (outputExists) {
+    async function check(item) {
+        const inputExists = await FSExtra.exists(item.input)
+        if (!inputExists) {
             alert({
                 operation: 'combine-text-pages',
                 input: item.input,
                 output: item.output,
-                message: 'output exists'
+                message: 'no input'
             })
-            return { ...item, skip: true } // already exists, skip
+            return { ...item, skip: true } // no file to combine, skip
         }
-        const textPages = await Promise.all(item.pages.map(page => FSExtra.readFile(`${origin}/${item.name}/${page}`, 'utf8')))
-        const text = textPages.join(' ')
-        await FSExtra.writeFile(item.output, text)
-        alert({
-            operation: 'combine-text-pages',
-            input: item.input,
-            output: item.output,
-            message: 'done'
-        })
         return item
     }
 
@@ -96,7 +103,7 @@ async function initialise(origin, destination, parameters, alert) {
             }).filter(x => x)
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(listing).unorder(read)
+        const run = () => source().unorder(check).unorder(listing).unorder(read)
         return { run, length }
     }
 

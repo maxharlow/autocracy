@@ -20,6 +20,7 @@ async function initialise(origin, destination, parameters, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
+            if (item.skip) return item
             const output = Tempy.directory()
             const command = `mutool draw -r ${options.density} -o "${output}/page-%d.png" "${escaped(item.input)}"`
             try {
@@ -43,7 +44,7 @@ async function initialise(origin, destination, parameters, alert) {
                 throw new Error(message)
             }
         }
-        return { run }
+        return run
     }
 
     async function converterLibrary() {
@@ -77,15 +78,42 @@ async function initialise(origin, destination, parameters, alert) {
                 message: 'done'
             })
         }
-        return { run }
+        return run
     }
 
-    async function convert(item) {
-        const converters = {
+    async function convert() {
+        const methods = {
             shell: converterShell,
             library: converterLibrary
         }
-        const converter = await converters[options.method]()
+        const method = await methods[options.method]()
+        const run = async item => {
+            if (item.skip) return item
+            alert({
+                operation: 'convert-pdf-to-image-pages',
+                input: item.input,
+                output: item.output,
+                message: 'converting...'
+            })
+            try {
+                await method(item)
+                return item
+            }
+            catch (e) {
+                alert({
+                    operation: 'convert-pdf-to-image-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: e.message,
+                    importance: 'error'
+                })
+                return { ...item, skip: true } // failed with error
+            }
+        }
+        return run
+    }
+
+    async function check(item) {
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
             alert({
@@ -106,30 +134,12 @@ async function initialise(origin, destination, parameters, alert) {
             })
             return { ...item, skip: true } // no input, skip
         }
-        alert({
-            operation: 'convert-pdf-to-image-pages',
-            input: item.input,
-            output: item.output,
-            message: 'converting...'
-        })
-        try {
-            await converter.run(item)
-            return item
-        }
-        catch (e) {
-            alert({
-                operation: 'convert-pdf-to-image-pages',
-                input: item.input,
-                output: item.output,
-                message: e.message,
-                importance: 'error'
-            })
-            return { ...item, skip: true } // failed with error
-        }
+        return item
     }
 
     async function setup() {
         await FSExtra.ensureDir(destination)
+        const converter = await convert()
         const source = () => {
             const listing = FSExtra.opendir(options.originInitial || origin)
             return Scramjet.DataStream.from(listing).map(entry => {
@@ -142,7 +152,7 @@ async function initialise(origin, destination, parameters, alert) {
             }).filter(x => x)
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(convert)
+        const run = () => source().unorder(check).unorder(converter)
         return { run, length }
     }
 

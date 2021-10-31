@@ -9,26 +9,7 @@ async function initialise(origin, destination, parameters, alert) {
     }
 
     async function preprocess(item) {
-        const outputExists = await FSExtra.exists(item.output)
-        if (outputExists) {
-            alert({
-                operation: 'preprocess-image-pages',
-                input: item.input,
-                output: item.output,
-                message: 'output exists'
-            })
-            return { ...item, skip: true } // already exists, skip
-        }
-        const inputExists = await FSExtra.exists(item.input)
-        if (!inputExists) {
-            alert({
-                operation: 'preprocess-image-pages',
-                input: item.input,
-                output: item.output,
-                message: 'no input'
-            })
-            return { ...item, skip: true } // no input, skip
-        }
+        if (item.skip) return item
         await FSExtra.ensureDir(`${destination}/${item.name}`)
         alert({
             operation: 'preprocess-image-pages',
@@ -60,6 +41,30 @@ async function initialise(origin, destination, parameters, alert) {
         }
     }
 
+    async function check(item) {
+        const outputExists = await FSExtra.exists(item.output)
+        if (outputExists) {
+            alert({
+                operation: 'preprocess-image-pages',
+                input: item.input,
+                output: item.output,
+                message: 'output exists'
+            })
+            return { ...item, skip: true } // already exists, skip
+        }
+        const inputExists = await FSExtra.exists(item.input)
+        if (!inputExists) {
+            alert({
+                operation: 'preprocess-image-pages',
+                input: item.input,
+                output: item.output,
+                message: 'no input'
+            })
+            return { ...item, skip: true } // no input, skip
+        }
+        return item
+    }
+
     async function setup() {
         await FSExtra.ensureDir(destination)
         const source = () => {
@@ -79,7 +84,7 @@ async function initialise(origin, destination, parameters, alert) {
             })
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(preprocess)
+        const run = () => source().unorder(check).unorder(preprocess)
         return { run, length }
     }
 

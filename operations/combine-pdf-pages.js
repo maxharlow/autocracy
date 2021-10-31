@@ -13,17 +13,88 @@ async function initialise(origin, destination, parameters, alert) {
         ...parameters
     }
 
-    async function listing(item) {
-        const inputExists = await FSExtra.exists(item.input)
-        if (!inputExists) {
+    async function combinerShell() {
+        const isInstalled = await Lookpath.lookpath('mutool')
+        if (!isInstalled) throw new Error('MuPDF not found!')
+        const escaped = path => path.replaceAll('"', '\\"')
+        const execute = Util.promisify(ChildProcess.exec)
+        const run = async item => {
+            const output = Tempy.file()
+            const pagesList = item.pages.map(page => `"${escaped(item.input)}/${page}"`).join(' ')
+            const command = `mutool merge -o ${output} ${pagesList}`
+            try {
+                await execute(command)
+                await FSExtra.move(output, item.output)
+            }
+            catch (e) {
+                await FSExtra.remove(output)
+                const message = e.message.trim()
+                    .split('\n')
+                    .filter(line => !line.match(/Command failed:|warning:|aborting process/))
+                    .map(line => line.replace('error: ', ''))
+                    .join(', ')
+                    .toLowerCase()
+                throw new Error(message)
+            }
+        }
+        return run
+    }
+
+    async function combinerLibrary() {
+        const run = async item => {
+            const document = new PDF.Document()
+            await item.pages.reduce(async (previous, page) => {
+                await previous
+                const pageData = await FSExtra.readFile(`${origin}/${item.name}/${page}`)
+                const pageDocument = new PDF.ExternalDocument(pageData)
+                document.addPagesOf(pageDocument)
+            }, Promise.resolve())
+            const data = document.asBuffer()
+            await FSExtra.writeFile(item.output, data)
+        }
+        return run
+    }
+
+    async function combiner() {
+        const methods = {
+            shell: combinerShell,
+            library: combinerLibrary // slightly slower, has a 2GB limit for output files
+        }
+        const method = await methods[options.method]()
+        const run = async item => {
+            if (item.skip) return item
             alert({
                 operation: 'combine-pdf-pages',
                 input: item.input,
                 output: item.output,
-                message: 'no input'
+                message: `combining ${item.pages.length} pages...`
             })
-            return { ...item, skip: true } // no input, skip
+            try {
+                await method(item)
+                alert({
+                    operation: 'combine-pdf-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: 'done'
+                })
+                return item
+            }
+            catch (e) {
+                alert({
+                    operation: 'combine-pdf-pages',
+                    input: item.input,
+                    output: item.output,
+                    message: e.message,
+                    importance: 'error'
+                })
+                return { ...item, skip: true } // failed with error
+            }
         }
+        return run
+    }
+
+    async function listing(item) {
+        if (item.skip) return item
         const pagesUnsorted = await FSExtra.readdir(item.input)
         if (pagesUnsorted.length === 0) {
             alert({
@@ -51,64 +122,10 @@ async function initialise(origin, destination, parameters, alert) {
         const pages = pagesUnsorted.sort((a, b) => {
             return Number(a.replace(/[^0-9]/g, '')) - Number(b.replace(/[^0-9]/g, ''))
         })
-        alert({
-            operation: 'combine-pdf-pages',
-            input: item.input,
-            output: item.output,
-            message: `combining ${pages.length} pages...`
-        })
         return { ...item, pages }
     }
 
-    async function combinerShell() {
-        const isInstalled = await Lookpath.lookpath('mutool')
-        if (!isInstalled) throw new Error('MuPDF not found!')
-        const escaped = path => path.replaceAll('"', '\\"')
-        const execute = Util.promisify(ChildProcess.exec)
-        const run = async item => {
-            const output = Tempy.file()
-            const pagesList = item.pages.map(page => `"${escaped(item.input)}/${page}"`).join(' ')
-            const command = `mutool merge -o ${output} ${pagesList}`
-            try {
-                await execute(command)
-                await FSExtra.move(output, item.output)
-            }
-            catch (e) {
-                await FSExtra.remove(output)
-                const message = e.message.trim()
-                    .split('\n')
-                    .filter(line => !line.match(/Command failed:|warning:|aborting process/))
-                    .map(line => line.replace('error: ', ''))
-                    .join(', ')
-                    .toLowerCase()
-                throw new Error(message)
-            }
-        }
-        return { run }
-    }
-
-    async function combinerLibrary() {
-        const run = async item => {
-            const document = new PDF.Document()
-            await item.pages.reduce(async (previous, page) => {
-                await previous
-                const pageData = await FSExtra.readFile(`${origin}/${item.name}/${page}`)
-                const pageDocument = new PDF.ExternalDocument(pageData)
-                document.addPagesOf(pageDocument)
-            }, Promise.resolve())
-            const data = document.asBuffer()
-            await FSExtra.writeFile(item.output, data)
-        }
-        return { run }
-    }
-
-    async function combine(item) {
-        const combiners = {
-            shell: combinerShell,
-            library: combinerLibrary // slightly slower, has a 2GB limit for output files
-        }
-        const combiner = await combiners[options.method]()
-        if (item.skip) return item
+    async function check(item) {
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
             alert({
@@ -119,36 +136,22 @@ async function initialise(origin, destination, parameters, alert) {
             })
             return { ...item, skip: true } // already exists, skip
         }
-        alert({
-            operation: 'combine-pdf-pages',
-            input: item.input,
-            output: item.output,
-            message: 'combining...'
-        })
-        try {
-            await combiner.run(item)
+        const inputExists = await FSExtra.exists(item.input)
+        if (!inputExists) {
             alert({
                 operation: 'combine-pdf-pages',
                 input: item.input,
                 output: item.output,
-                message: 'done'
+                message: 'no input'
             })
-            return item
+            return { ...item, skip: true } // no input, skip
         }
-        catch (e) {
-            alert({
-                operation: 'combine-pdf-pages',
-                input: item.input,
-                output: item.output,
-                message: e.message,
-                importance: 'error'
-            })
-            return { ...item, skip: true } // failed with error
-        }
+        return item
     }
 
     async function setup() {
         await FSExtra.ensureDir(destination)
+        const combine = await combiner()
         const source = () => {
             const listing = FSExtra.opendir(options.originInitial || origin)
             return Scramjet.DataStream.from(listing).map(entry => {
@@ -161,7 +164,7 @@ async function initialise(origin, destination, parameters, alert) {
             }).filter(x => x)
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(listing).unorder(combine)
+        const run = () => source().unorder(check).unorder(listing).unorder(combine)
         return { run, length }
     }
 

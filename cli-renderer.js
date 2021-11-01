@@ -13,45 +13,53 @@ function truncate(space, ...texts) {
     return texts.map((text, i) => '…' + text.slice(-slotSpace - (i === 0 ? slotRemainder : 0)))
 }
 
-function draw(linesPrevious) {
+function draw(linesDrawn) {
     if (!isDirty) {
-        setTimeout(() => draw(linesPrevious), 100)
+        setTimeout(() => draw(linesDrawn), 100)
         return
     }
-    Process.stderr.moveCursor(0, -linesPrevious)
-    const lines = Object.values(alerts).length + Object.values(tickers).length
-    Object.values(alerts).forEach(details => {
+    const linesFull = [
+        ...Object.values(alerts).map(details => {
+            const width = Process.stderr.columns - (details.operation.length + details.message.length + 8)
+            const [inputTruncated, outputTruncated] = truncate(width, details.input, details.output)
+            const elements = [
+                Chalk.blue(details.operation),
+                ' ',
+                inputTruncated,
+                Chalk.blue(' → '),
+                outputTruncated,
+                ': ',
+                details.importance === 'error' ? Chalk.red.bold(details.message)
+                    : details.importance === 'warning' ? Chalk.magenta.bold(details.message)
+                    : details.message.endsWith('...') ? Chalk.yellow(details.message)
+                    : details.message.toLowerCase().startsWith('done') ? Chalk.green(details.message)
+                    : Chalk.magenta(details.message)
+            ]
+            return elements.filter(x => x).join('')
+        }),
+        ...Object.entries(tickers).map(([operation, proportion]) => {
+            const width = Process.stderr.columns - (operation.length + 8)
+            const barWidth = Math.floor(proportion * width)
+            const bar = '█'.repeat(barWidth) + ' '.repeat(width - barWidth)
+            const percentage = `${Math.floor(proportion * 100)}%`.padStart(4, ' ')
+            return `${operation} |${bar}| ${percentage}`
+        })
+    ]
+    const scrollback = Process.stderr.rows - 1
+    const lines = !isFinal && linesFull.length > scrollback
+        ? linesFull.slice(-scrollback)
+        : linesFull
+    Array.from({ length: linesDrawn }).forEach(() => {
+        Process.stderr.moveCursor(0, -1)
         Process.stderr.clearLine()
-        const width = Process.stderr.columns - (details.operation.length + details.message.length + 8)
-        const [inputTruncated, outputTruncated] = truncate(width, details.input, details.output)
-        const elements = [
-            Chalk.blue(details.operation),
-            ' ',
-            inputTruncated,
-            Chalk.blue(' → '),
-            outputTruncated,
-            ': ',
-            details.importance === 'error' ? Chalk.red.bold(details.message)
-                : details.importance === 'warning' ? Chalk.magenta.bold(details.message)
-                : details.message.endsWith('...') ? Chalk.yellow(details.message)
-                : details.message.toLowerCase().startsWith('done') ? Chalk.green(details.message)
-                : Chalk.magenta(details.message)
-        ]
-        console.error(elements.filter(x => x).join(''))
     })
-    Object.entries(tickers).forEach(([operation, proportion]) => {
-        Process.stderr.clearLine()
-        const width = Process.stderr.columns - (operation.length + 8)
-        const barWidth = Math.floor(proportion * width)
-        const bar = '█'.repeat(barWidth) + ' '.repeat(width - barWidth)
-        const percentage = `${Math.floor(proportion * 100)}%`.padStart(4, ' ')
-        console.error(`${operation} |${bar}| ${percentage}`)
-    })
+    if (lines.length > 0) console.error(lines.join('\n'))
     isDirty = false
-    if (!isFinal) setTimeout(() => draw(lines), 100) // loop
+    if (!isFinal) setTimeout(() => draw(lines.length), 100) // loop
 }
 
 function setup(verbose) {
+    Process.stderr.on('resize', () => isDirty = true)
     const progress = (key, total) => {
         let ticks = 0
         tickers[key] = 0

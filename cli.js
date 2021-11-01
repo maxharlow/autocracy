@@ -133,8 +133,8 @@ async function setup() {
     })
     if (instructions.argv._.length === 0) instructions.showHelp().exit(0)
     const command = instructions.argv._[0]
-    const { alert, progress, finalise } = cliRenderer(instructions.argv.verbose)
     console.error('Starting up...')
+    const { alert, progress, finalise } = cliRenderer(instructions.argv.verbose)
     try {
         if (command === 'get-text') {
             const {

@@ -1,10 +1,20 @@
 import Process from 'process'
+import Events from 'events'
 import Chalk from 'chalk'
 
+const events = new Events.EventEmitter()
 let isFinal = false
 let isDirty = true
 let alerts = {}
 let tickers = {}
+
+function toAlternateScreen() {
+    Process.stderr.write(Buffer.from([0x1b, 0x5b, 0x3f, 0x31, 0x30, 0x34, 0x39, 0x68]))
+}
+
+function toMainScreen() {
+    Process.stderr.write(Buffer.from([0x1b, 0x5b, 0x3f, 0x31, 0x30, 0x34, 0x39, 0x6c]))
+}
 
 function truncate(space, ...texts) {
     if (texts.reduce((a, text) => a + text.length, 0) <= space) return texts
@@ -14,7 +24,7 @@ function truncate(space, ...texts) {
 }
 
 function draw(linesDrawn) {
-    if (!isDirty) {
+    if (!isDirty && !isFinal) {
         setTimeout(() => draw(linesDrawn), 100)
         return
     }
@@ -49,33 +59,49 @@ function draw(linesDrawn) {
     const lines = !isFinal && linesFull.length > scrollback
         ? linesFull.slice(-scrollback)
         : linesFull
-    Array.from({ length: linesDrawn }).forEach(() => {
-        Process.stderr.moveCursor(0, -1)
-        Process.stderr.clearLine()
-    })
+    Process.stderr.moveCursor(0, -linesDrawn)
+    Process.stderr.clearScreenDown()
+    if (linesFull.length >= scrollback && linesDrawn < scrollback) toAlternateScreen()
+    if (linesFull >= scrollback) console.error('\n'.repeat(scrollback - lines.length)) // write at bottom of screen
+    if (linesDrawn === scrollback && isFinal) toMainScreen()
     if (lines.length > 0) console.error(lines.join('\n'))
     isDirty = false
-    if (!isFinal) setTimeout(() => draw(lines.length), 100) // loop
+    if (!isFinal) setTimeout(() => draw(lines.length), 1000) // loop
+    else events.emit('finished')
 }
 
 function setup(verbose) {
-    Process.stderr.on('resize', () => isDirty = true)
     const progress = (key, total) => {
         let ticks = 0
         tickers[key] = 0
         return () => {
+            if (isFinal) return
             ticks = ticks + 1
             tickers[key] = ticks / total
             isDirty = true
         }
     }
     const alert = details => {
+        if (isFinal) return
         if (!verbose && !details.importance) return
         const key = [details.operation, details.input, details.output].filter(x => x).join('-')
         alerts[key] = details
         isDirty = true
     }
-    const finalise = () => isFinal = true
+    const finalise = () => {
+        isFinal = true
+        return new Promise(resolve => events.on('finished', resolve))
+    }
+    Process.stdin.setRawMode(true)
+    Process.stdin.setEncoding('utf8')
+    Process.stdin.on('data', async data => {
+        if (data === '\u0003') {
+            await finalise()
+            Process.exit(0)
+        }
+    })
+    Process.stdin.unref()
+    Process.stderr.on('resize', () => isDirty = true)
     draw() // start loop
     return { progress, alert, finalise }
 }

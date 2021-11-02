@@ -5,15 +5,20 @@ import Chalk from 'chalk'
 const events = new Events.EventEmitter()
 let isFinal = false
 let isDirty = true
+let isAlternate = false
 let alerts = {}
 let tickers = {}
 
 function toAlternateScreen() {
+    if (isAlternate) return
     Process.stderr.write(Buffer.from([0x1b, 0x5b, 0x3f, 0x31, 0x30, 0x34, 0x39, 0x68]))
+    isAlternate = true
 }
 
 function toMainScreen() {
+    if (!isAlternate) return
     Process.stderr.write(Buffer.from([0x1b, 0x5b, 0x3f, 0x31, 0x30, 0x34, 0x39, 0x6c]))
+    isAlternate = false
 }
 
 function truncate(space, ...texts) {
@@ -59,14 +64,14 @@ function draw(linesDrawn) {
     const lines = !isFinal && linesFull.length > scrollback
         ? linesFull.slice(-scrollback)
         : linesFull
-    Process.stderr.moveCursor(0, -linesDrawn)
+    Process.stderr.moveCursor(0, -Math.min(linesDrawn, scrollback))
     Process.stderr.clearScreenDown()
-    if (linesFull.length >= scrollback && linesDrawn < scrollback) toAlternateScreen()
-    if (linesFull >= scrollback) console.error('\n'.repeat(scrollback - lines.length)) // write at bottom of screen
-    if (linesDrawn === scrollback && isFinal) toMainScreen()
+    if (linesFull.length >= scrollback) toAlternateScreen()
+    if (isAlternate && !isFinal) console.error('\n'.repeat(scrollback - lines.length)) // write at bottom of screen
+    if (isFinal) toMainScreen()
     if (lines.length > 0) console.error(lines.join('\n'))
     isDirty = false
-    if (!isFinal) setTimeout(() => draw(lines.length), 1000) // loop
+    if (!isFinal) setTimeout(() => draw(lines.length), 1) // loop
     else events.emit('finished')
 }
 
@@ -96,6 +101,7 @@ function setup(verbose) {
     Process.stdin.setEncoding('utf8')
     Process.stdin.on('data', async data => {
         if (data === '\u0003') {
+            console.error(Chalk.bgRedBright.white('Stopping...'))
             await finalise()
             Process.exit(0)
         }

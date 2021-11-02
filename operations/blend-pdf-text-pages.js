@@ -68,7 +68,7 @@ async function initialise(origin, originText, destination, parameters, alert) {
                     message: e.message,
                     importance: 'error'
                 })
-                return { ...item, skip: true } // failed with error
+                return { ...item, skip: true } // execution failed with message
             }
         }
         return run
@@ -83,7 +83,7 @@ async function initialise(origin, originText, destination, parameters, alert) {
                 output: item.output,
                 message: 'output exists'
             })
-            return { ...item, skip: true } // already exists, skip
+            return { ...item, skip: true } // we can use cached output
         }
         return item
     }

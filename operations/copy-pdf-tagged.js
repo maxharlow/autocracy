@@ -56,7 +56,7 @@ async function initialise(origin, destination, parameters, alert) {
             output: item.output,
             message: 'not tagged'
         })
-        return { ...item, skip: true }
+        return { ...item, skip: true } // doesn't have tagged-text
     }
 
     async function setup() {

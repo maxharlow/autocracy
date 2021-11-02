@@ -21,16 +21,9 @@ async function initialise(origin, destination, parameters, alert) {
             try {
                 const result = await execute(command)
                 const text = result.stdout.replace(/\s+/g, ' ')
-                if (text.trim() === '') {
-                    alert({
-                        operation: 'extract-pdf-to-text',
-                        input: item.input,
-                        output: item.output,
-                        message: 'no text found'
-                    })
-                    return { ...item, skip: true }
-                }
+                if (text.trim() === '') return false
                 await FSExtra.writeFile(item.output, text)
+                return true
             }
             catch (e) {
                 const message = e.message.trim()
@@ -59,7 +52,16 @@ async function initialise(origin, destination, parameters, alert) {
                 message: 'extracting...'
             })
             try {
-                await method(item)
+                const hasText = await method(item)
+                if (!hasText) {
+                    alert({
+                        operation: 'extract-pdf-to-text',
+                        input: item.input,
+                        output: item.output,
+                        message: 'no text found'
+                    })
+                    return { ...item, skip: true } // no text found
+                }
                 alert({
                     operation: 'extract-pdf-to-text',
                     input: item.input,
@@ -76,7 +78,7 @@ async function initialise(origin, destination, parameters, alert) {
                     message: e.message,
                     importance: 'error'
                 })
-                return { ...item, skip: true } // failed with error
+                return { ...item, skip: true } // execution failed with message
             }
         }
         return run
@@ -91,7 +93,17 @@ async function initialise(origin, destination, parameters, alert) {
                 output: item.output,
                 message: 'output exists'
             })
-            return { ...item, skip: true } // already exists, skip
+            return { ...item, skip: true } // we can use cached output
+        }
+        const inputExists = await FSExtra.exists(item.input)
+        if (!inputExists) {
+            alert({
+                operation: 'extract-pdf-to-text',
+                input: item.input,
+                output: item.output,
+                message: 'no input'
+            })
+            return { ...item, skip: true } // exists in initial-origin but not origin
         }
         return item
     }

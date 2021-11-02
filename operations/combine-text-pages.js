@@ -17,7 +17,7 @@ async function initialise(origin, destination, parameters, alert) {
                 output: item.output,
                 message: 'output exists'
             })
-            return { ...item, skip: true } // already exists, skip
+            return { ...item, skip: true } // we can use cached output
         }
         const textPages = await Promise.all(item.pages.map(page => FSExtra.readFile(`${origin}/${item.name}/${page}`, 'utf8')))
         const text = textPages.join(' ')
@@ -48,7 +48,7 @@ async function initialise(origin, destination, parameters, alert) {
                 message: 'no pages found',
                 importance: 'error'
             })
-            return { ...item, skip: true } // no pages found to combine, skip
+            return { ...item, skip: true } // no pages found to combine
         }
         if (options.originPrior) {
             const pagesPrior = await FSExtra.readdir(`${options.originPrior}/${item.name}`)
@@ -76,6 +76,16 @@ async function initialise(origin, destination, parameters, alert) {
     }
 
     async function check(item) {
+        const outputExists = await FSExtra.exists(item.output)
+        if (outputExists) {
+            alert({
+                operation: 'combine-text-pages',
+                input: item.input,
+                output: item.output,
+                message: 'output exists'
+            })
+            return { ...item, skip: true } // we can use cached output
+        }
         const inputExists = await FSExtra.exists(item.input)
         if (!inputExists) {
             alert({
@@ -84,7 +94,7 @@ async function initialise(origin, destination, parameters, alert) {
                 output: item.output,
                 message: 'no input'
             })
-            return { ...item, skip: true } // no file to combine, skip
+            return { ...item, skip: true } // exists in initial-origin but not origin
         }
         return item
     }

@@ -37,7 +37,7 @@ async function initialise(origin, destination, parameters, alert) {
                 message: e.message,
                 importance: 'error'
             })
-            return { ...item, skip: true } // failed with error
+            return { ...item, skip: true } // execution failed with message
         }
     }
 
@@ -50,7 +50,7 @@ async function initialise(origin, destination, parameters, alert) {
                 output: item.output,
                 message: 'output exists'
             })
-            return { ...item, skip: true } // already exists, skip
+            return { ...item, skip: true } // we can use cached output
         }
         const inputExists = await FSExtra.exists(item.input)
         if (!inputExists) {
@@ -60,7 +60,7 @@ async function initialise(origin, destination, parameters, alert) {
                 output: item.output,
                 message: 'no input'
             })
-            return { ...item, skip: true } // no input, skip
+            return { ...item, skip: true } // exists in initial-origin but not origin
         }
         return item
     }

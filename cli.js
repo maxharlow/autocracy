@@ -64,10 +64,10 @@ async function setup() {
     })
     instructions.command('symlink-missing', false, args => {
         args
-            .usage('Usage: autocracy symlink-missing <origin> <intermedidate> <destination>')
+            .usage('Usage: autocracy symlink-missing <origin> <alternative> <destination>')
             .demandCommand(3, '')
             .positional('origin', { type: 'string', describe: 'Origin directory' })
-            .positional('intermediate', { type: 'string', describe: 'Intermediate directory' })
+            .positional('alternative', { type: 'string', describe: 'Alternative directory' })
             .positional('destination', { type: 'string', describe: 'Destination directory' })
     })
     instructions.command('convert-pdf-to-image-pages', false, args => {
@@ -178,9 +178,9 @@ async function setup() {
         }
         else if (command === 'symlink-missing') {
             const {
-                _: [, origin, intermediate, destination]
+                _: [, origin, alternative, destination]
             } = instructions.argv
-            const operation = await autocracy.operations.symlinkMissing(origin, intermediate, destination, alert)
+            const operation = await autocracy.operations.symlinkMissing(origin, alternative, destination, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'convert-pdf-to-image-pages') {

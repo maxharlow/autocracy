@@ -35,7 +35,7 @@ async function initialise(origin, destination, parameters, alert) {
         }
         return {
             run,
-            terminate: () => {} // for consistency
+            shutdown: () => {} // for consistency
         }
     }
 
@@ -62,7 +62,7 @@ async function initialise(origin, destination, parameters, alert) {
         }
         return {
             run,
-            terminate: scheduler.terminate
+            shutdown: scheduler.terminate
         }
     }
 
@@ -80,7 +80,7 @@ async function initialise(origin, destination, parameters, alert) {
         }
         return {
             run,
-            terminate: () => {} // for consistency
+            shutdown: () => {} // for consistency
         }
     }
 
@@ -123,7 +123,7 @@ async function initialise(origin, destination, parameters, alert) {
         }
         return {
             run,
-            terminate: method.terminate
+            shutdown: method.shutdown
         }
     }
 
@@ -178,7 +178,7 @@ async function initialise(origin, destination, parameters, alert) {
         return {
             run,
             length,
-            terminate: convert.terminate
+            shutdown: convert.shutdown
         }
     }
 

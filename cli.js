@@ -16,7 +16,7 @@ function runProcess(segments, progress) {
 async function runOperation(operation, progress) {
     const total = await operation.length()
     await operation.run().each(progress('Working...', total)).whenEnd()
-    if (operation.terminate) await operation.terminate()
+    if (operation.shutdown) await operation.shutdown()
 }
 
 async function setup() {

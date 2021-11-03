@@ -4,6 +4,7 @@ import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import Lookpath from 'lookpath'
 import Tempy from 'tempy'
+import PDF from 'pdfjs'
 import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 
@@ -13,7 +14,20 @@ async function initialise(origin, destination, parameters, alert) {
         method: 'shell',
         language: 'eng',
         density: 300,
+        timeout: 5 * 60, // seconds
         ...parameters
+    }
+
+    function withTimeout(alternative) {
+        const controller = new AbortController()
+        const onTimeout = async () => {
+            if (controller.signal.aborted) return
+            controller.abort()
+            await alternative()
+        }
+        const id = setTimeout(onTimeout, options.timeout * 1000)
+        controller.signal.addEventListener('abort', () => clearTimeout(id))
+        return controller
     }
 
     async function converterShell() {
@@ -21,11 +35,13 @@ async function initialise(origin, destination, parameters, alert) {
         if (!isInstalled) throw new Error('Tesseract not found!')
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
-        const run = async item => {
+        const run = async (item, controller) => {
             const output = Tempy.file()
             const command = `OMP_THREAD_LIMIT=1 tesseract -c textonly_pdf=1,tessedit_do_invert=0 -l ${options.language} --dpi ${options.density} --psm 11 "${escaped(item.input)}" ${output} pdf`
             try {
-                await execute(command)
+                await execute(command, { signal: controller.signal })
+                if (controller.aborted) return
+                controller.abort()
                 await FSExtra.move(`${output}.pdf`, item.output)
             }
             catch (e) {
@@ -57,9 +73,11 @@ async function initialise(origin, destination, parameters, alert) {
             })
             scheduler.addWorker(worker)
         }, Promise.resolve())
-        const run = async item => {
+        const run = async (item, controller) => {
             await scheduler.addJob('recognize', item.input)
             const output = await scheduler.addJob('getPDF', item.input)
+            if (controller.aborted) return
+            controller.abort()
             const data = Buffer.from(output.data)
             await FSExtra.writeFile(item.output, data)
         }
@@ -85,7 +103,13 @@ async function initialise(origin, destination, parameters, alert) {
                 message: 'converting...'
             })
             try {
-                await method.run(item)
+                const controller = withTimeout(async () => {
+                    const document = new PDF.Document()
+                    document.cell()
+                    const data = await document.asBuffer()
+                    await FSExtra.writeFile(item.output, data) // write a blank PDF
+                })
+                await method.run(item, controller)
                 alert({
                     operation: 'convert-image-pages-to-pdf-text-pages',
                     input: item.input,
@@ -95,6 +119,16 @@ async function initialise(origin, destination, parameters, alert) {
                 return item
             }
             catch (e) {
+                if (e.message === 'the operation was aborted') {
+                    alert({
+                        operation: 'convert-image-pages-to-pdf-text-pages',
+                        input: item.input,
+                        output: item.output,
+                        message: `timed out after ${options.timeout}s`,
+                        importance: 'warning'
+                    })
+                    return item // timeouts aren't errors
+                }
                 alert({
                     operation: 'convert-image-pages-to-pdf-text-pages',
                     input: item.input,

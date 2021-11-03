@@ -13,8 +13,21 @@ async function initialise(origin, destination, parameters, alert) {
         method: 'shell',
         language: 'eng',
         density: 300,
+        timeout: 5 * 60, // seconds
         awsRegion: 'eu-west-1',
         ...parameters
+    }
+
+    function withTimeout(alternative) {
+        const controller = new AbortController()
+        const onTimeout = async () => {
+            if (controller.signal.aborted) return
+            controller.abort()
+            await alternative()
+        }
+        const id = setTimeout(onTimeout, options.timeout * 1000)
+        controller.signal.addEventListener('abort', () => clearTimeout(id))
+        return controller
     }
 
     async function converterShell() {
@@ -22,10 +35,12 @@ async function initialise(origin, destination, parameters, alert) {
         if (!isInstalled) throw new Error('Tesseract not found!')
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
-        const run = async item => {
+        const run = async (item, controller) => {
             const command = `OMP_THREAD_LIMIT=1 tesseract -c tessedit_do_invert=0 -l ${options.language} --dpi ${options.density} --psm 11 "${escaped(item.input)}" -`
             try {
-                const result = await execute(command)
+                const result = await execute(command, { signal: controller.signal })
+                if (controller.aborted) return
+                controller.abort()
                 await FSExtra.writeFile(item.output, result.stdout.replace(/\s+/g, ' '))
             }
             catch (e) {
@@ -56,8 +71,10 @@ async function initialise(origin, destination, parameters, alert) {
             })
             scheduler.addWorker(worker)
         }, Promise.resolve())
-        const run = async item => {
+        const run = async (item, controller) => {
             const output = await scheduler.addJob('recognize', item.input)
+            if (controller.aborted) return
+            controller.abort()
             await FSExtra.writeFile(item.output, output.data.text.replace(/\s+/g, ' '))
         }
         return {
@@ -68,13 +85,17 @@ async function initialise(origin, destination, parameters, alert) {
 
     function converterAWSTextract() {
         const textract = new AWSTextract.TextractClient({ region: options.awsRegion })
-        const run = async item => {
+        const run = async (item, controller) => {
             const detect = new AWSTextract.DetectDocumentTextCommand({
                 Document: {
                     Bytes: await FSExtra.readFile(item.input)
                 }
             })
-            const response = await textract.send(detect)
+            const response = await textract.send(detect, {
+                abortSignal: controller.signal
+            })
+            if (controller.aborted) return
+            controller.abort()
             const text = response.Blocks.filter(block => block.BlockType == 'LINE').map(block => block.Text).join(' ')
             await FSExtra.writeFile(item.output, text.replace(/\s+/g, ' '))
         }
@@ -101,7 +122,10 @@ async function initialise(origin, destination, parameters, alert) {
                 message: 'converting...'
             })
             try {
-                await method.run(item)
+                const controller = withTimeout(async () => {
+                    await FSExtra.writeFile(item.output, '') // write a blank file
+                })
+                await method.run(item, controller)
                 alert({
                     operation: 'convert-image-pages-to-text-pages',
                     input: item.input,
@@ -111,6 +135,16 @@ async function initialise(origin, destination, parameters, alert) {
                 return item
             }
             catch (e) {
+                if (e.message === 'the operation was aborted') {
+                    alert({
+                        operation: 'convert-image-pages-to-text-pages',
+                        input: item.input,
+                        output: item.output,
+                        message: `timed out after ${options.timeout}s`,
+                        importance: 'warning'
+                    })
+                    return item // timeouts aren't errors
+                }
                 alert({
                     operation: 'convert-image-pages-to-text-pages',
                     input: item.input,

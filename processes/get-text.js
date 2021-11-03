@@ -66,6 +66,7 @@ function initialise(origin, destination, parameters, alert) {
                     originInitial: origin,
                     method: 'shell',
                     language: options.language,
+                    timeout: 5 * 60,
                     density
                 },
                 alert

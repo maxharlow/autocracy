@@ -95,6 +95,7 @@ async function setup() {
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['aws-textract', 'library', 'shell'], default: 'shell' })
             .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find (not used by AWS)', default: 'eng' })
             .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
+            .option('t', { alias: 'timeout', type: 'number', describe: 'The maximum amount of time that the OCR should take, in seconds', default: 5 * 60 })
             .option('a', { alias: 'aws-region', type: 'string', describe: 'The AWS region, if using that method', default: 'eu-west-1' })
     })
     instructions.command('convert-image-pages-to-pdf-text-pages', false, args => {
@@ -106,6 +107,7 @@ async function setup() {
             .option('m', { alias: 'method', type: 'choices', describe: 'Conversion method to use', choices: ['library', 'shell'], default: 'shell' })
             .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find', default: 'eng' })
             .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
+            .option('t', { alias: 'timeout', type: 'number', describe: 'The maximum amount of time that the OCR should take, in seconds', default: 5 * 60 })
     })
     instructions.command('combine-text-pages', false, args => {
         args
@@ -207,9 +209,10 @@ async function setup() {
                 method,
                 language,
                 density,
+                timeout,
                 awsRegion
             } = instructions.argv
-            const parameters = { method, language, density, awsRegion }
+            const parameters = { method, language, density, timeout, awsRegion }
             const operation = await autocracy.operations.convertImagePagesToTextPages(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }
@@ -218,9 +221,10 @@ async function setup() {
                 _: [, origin, destination],
                 method,
                 language,
-                density
+                density,
+                timeout
             } = instructions.argv
-            const parameters = { method, language, density }
+            const parameters = { method, language, density, timeout }
             const operation = await autocracy.operations.convertImagePagesToPDFPages(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }

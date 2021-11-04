@@ -13,7 +13,7 @@ async function initialise(origin, originText, destination, parameters, alert) {
     }
 
     async function blenderShell() {
-        const isInstalled = await Lookpath.lookpath('QPDF')
+        const isInstalled = await Lookpath.lookpath('qpdf')
         if (!isInstalled) throw new Error('QPDF not found!')
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)

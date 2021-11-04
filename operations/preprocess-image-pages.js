@@ -1,5 +1,6 @@
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
+import Tempy from 'tempy'
 import Sharp from 'sharp'
 
 async function initialise(origin, destination, parameters, alert) {
@@ -15,12 +16,14 @@ async function initialise(origin, destination, parameters, alert) {
             operation: 'preprocess-image-pages',
             input: item.input,
             output: item.output,
-            message: 'converting...'
+            message: 'preprocessing...'
         })
+        const output = Tempy.file()
         try {
             await Sharp(item.input)
-                .threshold()
-                .toFile(item.output)
+                .threshold(100)
+                .toFile(output)
+            await FSExtra.move(output, item.output)
             alert({
                 operation: 'preprocess-image-pages',
                 input: item.input,

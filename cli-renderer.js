@@ -1,6 +1,7 @@
 import Process from 'process'
 import Events from 'events'
 import Chalk from 'chalk'
+import SimpleWCSWidth from 'simple-wcswidth'
 
 const events = new Events.EventEmitter()
 let isFinal = false
@@ -21,11 +22,18 @@ function toMainScreen() {
     isAlternate = false
 }
 
-function truncate(space, ...texts) {
-    if (texts.reduce((a, text) => a + text.length, 0) <= space) return texts
-    const slotSpace = Math.min(space / texts.length)
-    const slotRemainder = space % texts.length
-    return texts.map((text, i) => '…' + text.slice(-slotSpace - (i === 0 ? slotRemainder : 0)))
+function truncate(space, textA, textB) {
+    const textAWidth = SimpleWCSWidth.wcswidth(textA)
+    const textBWidth = SimpleWCSWidth.wcswidth(textB)
+    const slot = Math.floor(space / 2)
+    if (textAWidth <= slot && textBWidth <= slot) return [textA, textB]
+    const tail = (width, text) => {
+        const letters = text.split('').reverse()
+        return '…' + letters.reduce((a, character) => SimpleWCSWidth.wcswidth(a) >= width - 1 ? a : character + a, '')
+    }
+    if (textAWidth <= slot && textBWidth > slot) return [textA, tail(space - textAWidth, textB)]
+    if (textAWidth > slot && textBWidth <= slot) return [tail(space - textBWidth, textA), textB]
+    return [tail(slot + space % 2, textA), tail(slot, textB)]
 }
 
 function draw(linesDrawn) {
@@ -35,8 +43,8 @@ function draw(linesDrawn) {
     }
     const linesFull = [
         ...Object.values(alerts).map(details => {
-            const width = Process.stderr.columns - (details.operation.length + details.message.length + 8)
-            const [inputTruncated, outputTruncated] = truncate(width, details.input, details.output)
+            const width = Process.stderr.columns - (details.operation.length + details.message.length + 6)
+            const [inputTruncated, outputTruncated] = truncate(width, details.input.replaceAll('\n', '\\n'), details.output.replaceAll('\n', '\\n'))
             const elements = [
                 Chalk.blue(details.operation),
                 ' ',
@@ -48,9 +56,9 @@ function draw(linesDrawn) {
                     : details.importance === 'warning' ? Chalk.magenta.bold(details.message)
                     : details.message.endsWith('...') ? Chalk.yellow(details.message)
                     : details.message.toLowerCase().startsWith('done') ? Chalk.green(details.message)
-                    : Chalk.magenta(details.message)
+                    : Chalk.magenta(details.message.replaceAll('\n', ' '))
             ]
-            return elements.filter(x => x).join('')
+            return elements.filter(x => x).join('').slice(0, Process.stderr.cols)
         }),
         ...Object.entries(tickers).map(([operation, proportion]) => {
             const width = Process.stderr.columns - (operation.length + 8)
@@ -102,6 +110,7 @@ function setup(verbose) {
     Process.stdin.on('data', async data => {
         if (data === '\u0003') {
             console.error(Chalk.bgRedBright.white('Stopping...'))
+            Process.stderr.moveCursor(0, -1)
             await finalise()
             Process.exit(0)
         }

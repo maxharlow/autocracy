@@ -22,6 +22,15 @@ function toMainScreen() {
     isAlternate = false
 }
 
+function predict(timings, left) {
+    if (timings.length <= 1) return ''
+    const differences = timings.map((timing, i) => timings[i + 1] - timing).slice(0, -1)
+    const mean = differences.reduce((a, n) => a + n, 0) / differences.length
+    const milliseconds = mean * left
+    const [hours, minutes, seconds] = new Date(milliseconds).toISOString().substr(11, 8).split(':').map(Number)
+    return ((hours ? `${hours}h` : '') + (minutes ? `${minutes}m` : '') + `${seconds}s`).padStart(10)
+}
+
 function truncate(space, textA, textB) {
     const textAWidth = SimpleWCSWidth.wcswidth(textA)
     const textBWidth = SimpleWCSWidth.wcswidth(textB)
@@ -60,12 +69,12 @@ function draw(linesDrawn) {
             ]
             return elements.filter(x => x).join('').slice(0, Process.stderr.cols)
         }),
-        ...Object.entries(tickers).map(([operation, proportion]) => {
-            const width = Process.stderr.columns - (operation.length + 8)
+        ...Object.entries(tickers).map(([operation, { proportion, prediction }]) => {
+            const width = Process.stderr.columns - (operation.length + 19)
             const barWidth = Math.floor(proportion * width)
             const bar = '█'.repeat(barWidth) + ' '.repeat(width - barWidth)
             const percentage = `${Math.floor(proportion * 100)}%`.padStart(4, ' ')
-            return `${operation} |${bar}| ${percentage}`
+            return `${operation} |${bar}| ${percentage} ${prediction}`
         })
     ]
     const scrollback = Process.stderr.rows - 1
@@ -90,7 +99,12 @@ function setup(verbose) {
         return () => {
             if (isFinal) return
             ticks = ticks + 1
-            tickers[key] = ticks / total
+            const timings = (tickers[key].timings || []).slice(-9).concat(new Date())
+            tickers[key] = {
+                proportion: ticks / total,
+                timings,
+                prediction: predict(timings, total - ticks)
+            }
             isDirty = true
         }
     }

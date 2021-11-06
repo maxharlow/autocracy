@@ -52,7 +52,7 @@ function draw(linesDrawn) {
     }
     const linesFull = [
         ...Object.values(alerts).map(details => {
-            const width = Process.stderr.columns - (details.operation.length + details.message.length + 6)
+            const width = Process.stderr.columns - (details.operation.length + details.message.length + 5)
             const [inputTruncated, outputTruncated] = truncate(width, details.input.replaceAll('\n', '\\n'), details.output.replaceAll('\n', '\\n'))
             const elements = [
                 Chalk.blue(details.operation),
@@ -60,7 +60,7 @@ function draw(linesDrawn) {
                 inputTruncated,
                 Chalk.blue(' → '),
                 outputTruncated,
-                ': ',
+                ' ',
                 details.importance === 'error' ? Chalk.red.bold(details.message)
                     : details.importance === 'warning' ? Chalk.magenta.bold(details.message)
                     : details.message.endsWith('...') ? Chalk.yellow(details.message)

@@ -27,8 +27,9 @@ function predict(timings, left) {
     const differences = timings.map((timing, i) => timings[i + 1] - timing).slice(0, -1)
     const mean = differences.reduce((a, n) => a + n, 0) / differences.length
     const milliseconds = mean * left
+    if (milliseconds >= 24 * 60 * 60 * 1000) return '' // more than a day
     const [hours, minutes, seconds] = new Date(milliseconds).toISOString().substr(11, 8).split(':').map(Number)
-    return ((hours ? `${hours}h` : '') + (minutes ? `${minutes}m` : '') + `${seconds}s`).padStart(10)
+    return ((hours ? `${hours}h` : '') + (minutes ? `${minutes}m` : '') + (seconds && !hours ? `${seconds}s` : '')).padStart(6)
 }
 
 function truncate(space, textA, textB) {
@@ -70,7 +71,7 @@ function draw(linesDrawn) {
             return elements.filter(x => x).join('').slice(0, Process.stderr.cols)
         }),
         ...Object.entries(tickers).map(([operation, { proportion, prediction }]) => {
-            const width = Process.stderr.columns - (operation.length + 19)
+            const width = Process.stderr.columns - (operation.length + 15)
             const barWidth = Math.floor(proportion * width)
             const bar = '█'.repeat(barWidth) + ' '.repeat(width - barWidth)
             const percentage = `${Math.floor(proportion * 100)}%`.padStart(4, ' ')

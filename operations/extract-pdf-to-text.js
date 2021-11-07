@@ -105,6 +105,17 @@ async function initialise(origin, destination, parameters, alert) {
             })
             return { ...item, skip: true } // exists in initial-origin but not origin
         }
+        const buffer = Buffer.alloc(5)
+        await FSExtra.read(await FSExtra.open(item.input, 'r'), buffer, 0, 5)
+        if (buffer.toString() != '%PDF-') {
+            alert({
+                operation: 'extract-pdf-to-text',
+                input: item.input,
+                output: item.output,
+                message: 'not a valid PDF file'
+            })
+            return { ...item, skip: true } // not a valid PDF file
+        }
         return item
     }
 

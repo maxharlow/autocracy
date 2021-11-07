@@ -18,7 +18,6 @@ async function initialise(origin, originText, destination, parameters, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            if (item.skip) return item
             const output = Tempy.file()
             const command = `qpdf "${escaped(item.inputText)}" --overlay "${escaped(item.input)}" -- ${output}`
             try {
@@ -44,6 +43,7 @@ async function initialise(origin, originText, destination, parameters, alert) {
         }
         const method = await methods[options.method]()
         const run = async item => {
+            if (item.skip) return item
             alert({
                 operation: 'blend-pdf-text-pages',
                 input: item.input,
@@ -84,6 +84,17 @@ async function initialise(origin, originText, destination, parameters, alert) {
                 message: 'output exists'
             })
             return { ...item, skip: true } // we can use cached output
+        }
+        const buffer = Buffer.alloc(5)
+        await FSExtra.read(await FSExtra.open(item.input, 'r'), buffer, 0, 5)
+        if (buffer.toString() != '%PDF-') {
+            alert({
+                operation: 'blend-pdf-text-pages',
+                input: item.input,
+                output: item.output,
+                message: 'not a valid PDF file'
+            })
+            return { ...item, skip: true } // not a valid PDF file
         }
         return item
     }

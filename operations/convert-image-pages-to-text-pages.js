@@ -38,7 +38,7 @@ async function initialise(origin, destination, parameters, alert) {
         const run = async (item, controller) => {
             const command = `OMP_THREAD_LIMIT=1 tesseract -c tessedit_do_invert=0 -l ${options.language} --dpi ${options.density} --psm 11 "${escaped(item.input)}" -`
             try {
-                await execute(command, {
+                const result = await execute(command, {
                     signal: controller.signal,
                     killSignal: 'SIGKILL'
                 })

@@ -20,7 +20,6 @@ async function initialise(origin, destination, parameters, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            if (item.skip) return item
             const output = Tempy.directory()
             const command = `mutool draw -r ${options.density} -o "${output}/page-%d.png" "${escaped(item.input)}"`
             try {
@@ -127,6 +126,17 @@ async function initialise(origin, destination, parameters, alert) {
                 message: 'no input'
             })
             return { ...item, skip: true } // exists in initial-origin but not origin
+        }
+        const buffer = Buffer.alloc(5)
+        await FSExtra.read(await FSExtra.open(item.input, 'r'), buffer, 0, 5)
+        if (buffer.toString() != '%PDF-') {
+            alert({
+                operation: 'convert-pdf-to-image-pages',
+                input: item.input,
+                output: item.output,
+                message: 'not a valid PDF file'
+            })
+            return { ...item, skip: true } // not a valid PDF file
         }
         return item
     }

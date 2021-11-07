@@ -36,6 +36,7 @@ async function initialise(origin, destination, parameters, alert) {
     }
 
     async function copyMaybe(item) {
+        if (item.skip) return item
         const methods = {
             shell: detectorShell
         }
@@ -59,6 +60,21 @@ async function initialise(origin, destination, parameters, alert) {
         return { ...item, skip: true } // doesn't have tagged-text
     }
 
+    async function check(item) {
+        const buffer = Buffer.alloc(5)
+        await FSExtra.read(await FSExtra.open(item.input, 'r'), buffer, 0, 5)
+        if (buffer.toString() != '%PDF-') {
+            alert({
+                operation: 'copy-pdf-tagged',
+                input: item.input,
+                output: item.output,
+                message: 'not a valid PDF file'
+            })
+            return { ...item, skip: true } // not a valid PDF file
+        }
+        return item
+    }
+
     async function setup() {
         await FSExtra.ensureDir(destination)
         const source = () => {
@@ -73,7 +89,7 @@ async function initialise(origin, destination, parameters, alert) {
             }).filter(x => x)
         }
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(copyMaybe)
+        const run = () => source().unorder(check).unorder(copyMaybe)
         return { run, length }
     }
 

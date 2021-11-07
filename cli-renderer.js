@@ -96,11 +96,15 @@ function draw(linesDrawn) {
 function setup(verbose) {
     const progress = (key, total) => {
         let ticks = 0
-        tickers[key] = 0
+        tickers[key] = {
+            proportion: 0,
+            timings: [],
+            prediction: ''
+        }
         return () => {
             if (isFinal) return
             ticks = ticks + 1
-            const timings = (tickers[key].timings || []).slice(-9).concat(new Date())
+            const timings = tickers[key].timings.slice(-9).concat(new Date())
             tickers[key] = {
                 proportion: ticks / total,
                 timings,

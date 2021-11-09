@@ -47,7 +47,7 @@ function initialise(origin, destination, parameters, alert) {
             )
         },
         options.preprocess && {
-            name: 'Preprocessing image pages...',
+            name: 'Preprocessing image pages',
             setup: () => autocracy.operations.preprocessImagePages(
                 cacheImagePages,
                 cacheImagePagesPreprocessed,

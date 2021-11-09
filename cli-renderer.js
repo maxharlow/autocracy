@@ -1,6 +1,7 @@
 import Process from 'process'
 import Events from 'events'
 import Chalk from 'chalk'
+import Luxon from 'luxon'
 import SimpleWCSWidth from 'simple-wcswidth'
 
 const events = new Events.EventEmitter()
@@ -22,14 +23,27 @@ function toMainScreen() {
     isAlternate = false
 }
 
-function predict(timings, left) {
+function formatDuration(milliseconds) {
+    const [days, hours, minutes, seconds] = Luxon.Duration.fromMillis(milliseconds).toFormat('d:h:m:s').split(':').map(Number)
+    return [
+        days > 0 && days < 100000 ? `${days}d` : '',
+        hours > 0 && days < 100 ? `${hours}h` : '',
+        minutes > 0 && days === 0 ? `${minutes}m` : '',
+        seconds > 0 && hours === 0 && days === 0 ? `${seconds}s` : ''
+    ].join('')
+}
+
+function predict(start, timings, left) {
+    if (left === 0) {
+        const duration = formatDuration(new Date() - start)
+        return duration ? `took ${duration}` : ''
+    }
     if (timings.length <= 1) return ''
     const differences = timings.map((timing, i) => timings[i + 1] - timing).slice(0, -1)
     const mean = differences.reduce((a, n) => a + n, 0) / differences.length
     const milliseconds = mean * left
-    if (milliseconds >= 24 * 60 * 60 * 1000) return '' // more than a day
-    const [hours, minutes, seconds] = new Date(milliseconds).toISOString().substr(11, 8).split(':').map(Number)
-    return ((hours ? `${hours}h` : '') + (minutes ? `${minutes}m` : '') + (seconds && !hours ? `${seconds}s` : '')).padStart(6)
+    const duration = formatDuration(milliseconds)
+    return duration ? `${duration} left` : ''
 }
 
 function truncate(space, textA, textB) {
@@ -71,11 +85,11 @@ function draw(linesDrawn) {
             return elements.filter(x => x).join('').slice(0, Process.stderr.cols)
         }),
         ...Object.entries(tickers).map(([operation, { proportion, prediction }]) => {
-            const width = Process.stderr.columns - (operation.length + 15)
+            const width = Process.stderr.columns - (operation.length + 20)
             const barWidth = Math.floor(proportion * width)
             const bar = '█'.repeat(barWidth) + ' '.repeat(width - barWidth)
-            const percentage = `${Math.floor(proportion * 100)}%`.padStart(4, ' ')
-            return `${operation} |${bar}| ${percentage} ${prediction}`
+            const percentage = Math.floor(proportion * 100) + '%'
+            return `${operation} |${bar}| ${percentage.padStart(4)} ${prediction.padStart(11)}`
         })
     ]
     const scrollback = Process.stderr.rows - 1
@@ -97,6 +111,7 @@ function setup(verbose) {
     const progress = (key, total) => {
         let ticks = 0
         tickers[key] = {
+            started: new Date(),
             proportion: 0,
             timings: [],
             prediction: ''
@@ -106,9 +121,10 @@ function setup(verbose) {
             ticks = ticks + 1
             const timings = tickers[key].timings.slice(-9).concat(new Date())
             tickers[key] = {
+                started: tickers[key].started,
                 proportion: ticks / total,
                 timings,
-                prediction: predict(timings, total - ticks)
+                prediction: predict(tickers[key].started, timings, total - ticks)
             }
             isDirty = true
         }

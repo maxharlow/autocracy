@@ -5,7 +5,7 @@ import Luxon from 'luxon'
 import SimpleWCSWidth from 'simple-wcswidth'
 
 const events = new Events.EventEmitter()
-let beginning = null
+const beginning = new Date()
 let isDirty = true
 let isAlternate = false
 let finalisation = null
@@ -112,7 +112,6 @@ function draw(linesDrawn) {
 }
 
 function setup(verbose) {
-    beginning = new Date()
     const progress = (key, total) => {
         let ticks = 0
         tickers[key] = {

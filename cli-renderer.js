@@ -126,7 +126,7 @@ function setup(verbose) {
         return entry => {
             if (finalisation) return
             ticks = ticks + 1
-            const timings = entry.skip ? tickers[key].timings : tickers[key].timings.slice(-9).concat(new Date())
+            const timings = entry.skip ? tickers[key].timings : tickers[key].timings.slice(-99).concat(new Date())
             tickers[key] = {
                 started: tickers[key].started,
                 proportion: ticks / total,

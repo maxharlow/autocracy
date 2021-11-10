@@ -24,27 +24,25 @@ function toMainScreen() {
     isAlternate = false
 }
 
-function formatDuration(milliseconds) {
+function formatDuration(milliseconds, prefix = '', suffix = '') {
     const [days, hours, minutes, seconds] = Luxon.Duration.fromMillis(milliseconds).toFormat('d:h:m:s').split(':').map(Number)
-    return [
+    const units = [
         days > 0 && days < 100000 ? `${days}d` : '',
         hours > 0 && days < 100 ? `${hours}h` : '',
         minutes > 0 && days === 0 ? `${minutes}m` : '',
         seconds > 0 && hours === 0 && days === 0 ? `${seconds}s` : ''
     ].join('')
+    if (!units) return ''
+    return prefix + units + suffix
 }
 
 function predict(start, timings, left) {
-    if (left === 0) {
-        const duration = formatDuration(new Date() - start)
-        return duration ? `took ${duration}` : ''
-    }
+    if (left === 0) return formatDuration(new Date() - start, 'took ')
     if (timings.length <= 1) return ''
     const differences = timings.map((timing, i) => timings[i + 1] - timing).slice(0, -1)
     const mean = differences.reduce((a, n) => a + n, 0) / differences.length
     const milliseconds = mean * left
-    const duration = formatDuration(milliseconds)
-    return duration ? `${duration} left` : ''
+    return formatDuration(milliseconds, '', ' left')
 }
 
 function truncate(space, textA, textB) {
@@ -93,7 +91,7 @@ function draw(linesDrawn) {
             return `${operation} |${bar}| ${percentage.padStart(4)} ${prediction.padStart(11)}`
         }),
         ...(
-            finalisation === 'completed' ? [`Completed in ${formatDuration(new Date() - beginning)}!`]
+            finalisation === 'completed' ? [formatDuration(new Date() - beginning, 'Completed in ', '!')]
                 : finalisation === 'interrupted' ? ['Interrupted!']
                 : []
         )

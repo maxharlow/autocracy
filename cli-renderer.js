@@ -5,9 +5,10 @@ import Luxon from 'luxon'
 import SimpleWCSWidth from 'simple-wcswidth'
 
 const events = new Events.EventEmitter()
-let isFinal = false
+let beginning = null
 let isDirty = true
 let isAlternate = false
+let finalisation = null
 let alerts = {}
 let tickers = {}
 
@@ -61,7 +62,7 @@ function truncate(space, textA, textB) {
 }
 
 function draw(linesDrawn) {
-    if (!isDirty && !isFinal) {
+    if (!isDirty && !finalisation) {
         setTimeout(() => draw(linesDrawn), 100)
         return
     }
@@ -90,24 +91,30 @@ function draw(linesDrawn) {
             const bar = '█'.repeat(barWidth) + ' '.repeat(width - barWidth)
             const percentage = Math.floor(proportion * 100) + '%'
             return `${operation} |${bar}| ${percentage.padStart(4)} ${prediction.padStart(11)}`
-        })
+        }),
+        ...(
+            finalisation === 'completed' ? [`Completed in ${formatDuration(new Date() - beginning)}!`]
+                : finalisation === 'interrupted' ? ['Interrupted!']
+                : []
+        )
     ]
     const scrollback = Process.stderr.rows - 1
-    const lines = !isFinal && linesFull.length > scrollback
+    const lines = !finalisation && linesFull.length > scrollback
         ? linesFull.slice(-scrollback)
         : linesFull
     Process.stderr.moveCursor(0, -Math.min(linesDrawn, scrollback))
     Process.stderr.clearScreenDown()
     if (linesFull.length >= scrollback) toAlternateScreen()
-    if (isAlternate && !isFinal) console.error('\n'.repeat(scrollback - lines.length)) // write at bottom of screen
-    if (isFinal) toMainScreen()
+    if (isAlternate && !finalisation) console.error('\n'.repeat(scrollback - lines.length)) // write at bottom of screen
+    if (finalisation) toMainScreen()
     if (lines.length > 0) console.error(lines.join('\n'))
     isDirty = false
-    if (!isFinal) setTimeout(() => draw(lines.length), 1) // loop
+    if (!finalisation) setTimeout(() => draw(lines.length), 1) // loop
     else events.emit('finished')
 }
 
 function setup(verbose) {
+    beginning = new Date()
     const progress = (key, total) => {
         let ticks = 0
         tickers[key] = {
@@ -117,7 +124,7 @@ function setup(verbose) {
             prediction: ''
         }
         return () => {
-            if (isFinal) return
+            if (finalisation) return
             ticks = ticks + 1
             const timings = tickers[key].timings.slice(-9).concat(new Date())
             tickers[key] = {
@@ -130,14 +137,14 @@ function setup(verbose) {
         }
     }
     const alert = details => {
-        if (isFinal) return
+        if (finalisation) return
         if (!verbose && !details.importance) return
         const key = [details.operation, details.input, details.output].filter(x => x).join('-')
         alerts[key] = details
         isDirty = true
     }
-    const finalise = () => {
-        isFinal = true
+    const finalise = mode => {
+        finalisation = mode
         return new Promise(resolve => events.on('finished', resolve))
     }
     Process.stdin.setRawMode(true)
@@ -146,7 +153,7 @@ function setup(verbose) {
         if (data === '\u0003') {
             console.error(Chalk.bgRedBright.white('Stopping...'))
             Process.stderr.moveCursor(0, -1)
-            await finalise()
+            await finalise('interrupted')
             Process.exit(0)
         }
     })

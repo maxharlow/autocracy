@@ -257,10 +257,10 @@ async function setup() {
         else {
             throw new Error(`${command}: unknown command`)
         }
-        await finalise()
+        await finalise('completed')
     }
     catch (e) {
-        await finalise()
+        await finalise('error')
         console.error(instructions.argv.verbose ? e.stack : e.message)
         Process.exit(1)
     }

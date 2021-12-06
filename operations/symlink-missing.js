@@ -16,6 +16,16 @@ async function initialise(origin, alternative, destination, alert) {
     }
 
     async function check(item) {
+        const outputExists = await FSExtra.exists(item.output)
+        if (outputExists) {
+            alert({
+                operation: 'symlink-missing',
+                input: item.input,
+                output: item.output,
+                message: 'output exists'
+            })
+            return { ...item, skip: true } // we can use cached output
+        }
         const buffer = Buffer.alloc(5)
         await FSExtra.read(await FSExtra.open(item.input, 'r'), buffer, 0, 5)
         if (buffer.toString() != '%PDF-') {

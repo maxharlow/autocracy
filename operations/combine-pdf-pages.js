@@ -3,7 +3,7 @@ import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import PDF from 'pdfjs'
 import Lookpath from 'lookpath'
-import Tempy from 'tempy'
+import * as Tempy from 'tempy'
 import ChildProcess from 'child_process'
 
 async function initialise(origin, destination, parameters, alert) {

@@ -1,6 +1,6 @@
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
-import Tempy from 'tempy'
+import * as Tempy from 'tempy'
 import Sharp from 'sharp'
 
 async function initialise(origin, destination, parameters, alert) {

@@ -2,7 +2,7 @@ import Util from 'util'
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import Lookpath from 'lookpath'
-import Tempy from 'tempy'
+import * as Tempy from 'tempy'
 import ChildProcess from 'child_process'
 import MuPDF from 'mupdf-js'
 

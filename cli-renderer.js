@@ -36,6 +36,12 @@ function formatDuration(milliseconds, prefix = '', suffix = '') {
     return prefix + units + suffix
 }
 
+function formatFinalisation(mode) {
+    if (mode === 'complete') return [formatDuration(new Date() - beginning, 'Completed in ', '!')]
+    else if (mode === 'interrupt') return ['Interrupted!']
+    else return []
+}
+
 function predict(start, timings, left) {
     if (left === 0) return formatDuration(new Date() - start, 'took ')
     if (timings.length <= 1) return ''
@@ -90,11 +96,7 @@ function draw(linesDrawn) {
             const percentage = Math.floor(proportion * 100) + '%'
             return `${operation} |${bar}| ${percentage.padStart(4)} ${prediction.padStart(11)}`
         }),
-        ...(
-            finalisation === 'completed' ? [formatDuration(new Date() - beginning, 'Completed in ', '!')]
-                : finalisation === 'interrupted' ? ['Interrupted!']
-                : []
-        )
+        ...formatFinalisation(finalisation)
     ]
     const scrollback = Process.stderr.rows - 1
     const lines = !finalisation && linesFull.length > scrollback
@@ -112,6 +114,7 @@ function draw(linesDrawn) {
 }
 
 function setup(verbose) {
+    const doRedisplay = Process.stderr.isTTY === true
     const progress = (key, total) => {
         let ticks = 0
         tickers[key] = {
@@ -136,11 +139,13 @@ function setup(verbose) {
     const alert = details => {
         if (finalisation) return
         if (!verbose && !details.importance) return
+        if (!doRedisplay) console.error([details.operation, details.input, '→', details.output].filter(x => x).join(' '))
         const key = [details.operation, details.input, details.output].filter(x => x).join('-')
         alerts[key] = details
         isDirty = true
     }
     const finalise = mode => {
+        if (!doRedisplay && !finalisation) formatFinalisation(mode).map(text => console.error(text))
         finalisation = mode
         return new Promise(resolve => events.on('finished', resolve))
     }
@@ -149,14 +154,14 @@ function setup(verbose) {
     Process.stdin.on('data', async data => {
         if (data === '\u0003') {
             console.error(Chalk.bgRedBright.white('Stopping...'))
-            Process.stderr.moveCursor(0, -1)
-            await finalise('interrupted')
+            if (doRedisplay) Process.stderr.moveCursor(0, -1)
+            await finalise('interrupt')
             Process.exit(0)
         }
     })
     Process.stdin.unref()
     Process.stderr.on('resize', () => isDirty = true)
-    draw() // start loop
+    if (doRedisplay) draw() // start loop
     return { progress, alert, finalise }
 }
 

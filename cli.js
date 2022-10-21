@@ -257,7 +257,7 @@ async function setup() {
         else {
             throw new Error(`${command}: unknown command`)
         }
-        await finalise('completed')
+        await finalise('complete')
     }
     catch (e) {
         await finalise('error')

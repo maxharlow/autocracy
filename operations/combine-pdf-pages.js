@@ -19,7 +19,7 @@ async function initialise(origin, destination, parameters, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const output = Tempy.file()
+            const output = Tempy.temporaryFile()
             const pagesList = item.pages.map(page => `"${escaped(item.input)}/${page}"`).join(' ')
             const command = `mutool merge -o ${output} ${pagesList}`
             try {

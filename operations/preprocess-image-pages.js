@@ -18,7 +18,7 @@ async function initialise(origin, destination, parameters, alert) {
             output: item.output,
             message: 'preprocessing...'
         })
-        const output = Tempy.file()
+        const output = Tempy.temporaryFile()
         try {
             await Sharp(item.input)
                 .threshold(100)

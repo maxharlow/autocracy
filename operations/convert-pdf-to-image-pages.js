@@ -20,7 +20,7 @@ async function initialise(origin, destination, parameters, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const output = Tempy.directory()
+            const output = Tempy.temporaryDirectory()
             const command = `mutool draw -r ${options.density} -o "${output}/page-%d.png" "${escaped(item.input)}"`
             try {
                 await execute(command)
@@ -49,7 +49,7 @@ async function initialise(origin, destination, parameters, alert) {
             const documentData = await FSExtra.readFile(item.input)
             const document = processor.load(documentData)
             const pages = processor.countPages(document)
-            const output = Tempy.directory()
+            const output = Tempy.temporaryDirectory()
             const pagesOutput = Array.from({ length: pages }).map(async (_, index) => {
                 const page = index + 1
                 alert({

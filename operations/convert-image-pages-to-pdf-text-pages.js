@@ -36,7 +36,7 @@ async function initialise(origin, destination, parameters, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async (item, controller) => {
-            const output = Tempy.file()
+            const output = Tempy.temporaryFile()
             const command = `OMP_THREAD_LIMIT=1 tesseract -c textonly_pdf=1,tessedit_do_invert=0 -l ${options.language} --dpi ${options.density} --psm 12 "${escaped(item.input)}" ${output} pdf`
             try {
                 await execute(command, {

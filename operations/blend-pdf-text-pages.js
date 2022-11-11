@@ -18,7 +18,7 @@ async function initialise(origin, originText, destination, parameters, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const output = Tempy.file()
+            const output = Tempy.temporaryFile()
             const command = `qpdf "${escaped(item.inputText)}" --overlay "${escaped(item.input)}" -- ${output}`
             try {
                 await execute(command)

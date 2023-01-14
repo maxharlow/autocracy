@@ -37,7 +37,7 @@ function formatDuration(milliseconds, prefix = '', suffix = '') {
 }
 
 function formatFinalisation(mode) {
-    if (mode === 'complete') return [formatDuration(new Date() - beginning, 'Completed in ', '!')]
+    if (mode === 'complete') return [formatDuration(new Date() - beginning, 'Completed in ', '!') || 'Completed!']
     else if (mode === 'interrupt') return ['Interrupted!']
     else return []
 }

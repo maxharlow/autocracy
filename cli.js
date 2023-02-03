@@ -23,6 +23,7 @@ async function setup() {
     const instructions = Yargs(Process.argv.slice(2))
         .usage('Usage: autocracy <command>')
         .wrap(null)
+        .completion('completion', false)
         .option('V', { alias: 'verbose', type: 'boolean', describe: 'Print details', default: false })
         .help('?').alias('?', 'help')
         .version().alias('v', 'version')
@@ -134,6 +135,7 @@ async function setup() {
             .option('m', { alias: 'method', type: 'choices', describe: 'Blend method to use', choices: ['shell'], default: 'shell' })
     })
     if (instructions.argv._.length === 0) instructions.showHelp().exit(0)
+    if (instructions.argv['get-yargs-completions']) Process.exit(0)
     const command = instructions.argv._[0]
     console.error('Starting up...')
     const { alert, progress, finalise } = cliRenderer(instructions.argv.verbose)

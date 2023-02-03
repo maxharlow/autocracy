@@ -26,5 +26,9 @@
     },
     "bin": {
         "autocracy": "./bin.js"
+    },
+    "scripts": {
+        "postinstall": "[[ $SHELL == *zsh ]] && autocracy completion > /usr/local/share/zsh/site-functions/_autocracy",
+        "postuninstall": "[[ $SHELL == *zsh ]] && rm -f /usr/local/share/zsh/site-functions/_autocracy"
     }
 }

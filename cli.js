@@ -227,7 +227,7 @@ async function setup() {
                 timeout
             } = instructions.argv
             const parameters = { method, language, density, timeout }
-            const operation = await autocracy.operations.convertImagePagesToPDFPages(origin, destination, parameters, alert)
+            const operation = await autocracy.operations.convertImagePagesToPDFTextPages(origin, destination, parameters, alert)
             await runOperation(operation, progress)
         }
         else if (command === 'combine-text-pages') {

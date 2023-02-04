@@ -10,18 +10,18 @@
         "url": "https://github.com/maxharlow/autocracy.git"
     },
     "dependencies": {
-        "@aws-sdk/client-textract": "3.186.x",
-        "chalk": "5.1.x",
-        "fs-extra": "10.1.x",
+        "@aws-sdk/client-textract": "3.264.x",
+        "chalk": "5.2.x",
+        "fs-extra": "11.1.x",
         "lookpath": "1.2.x",
-        "luxon": "3.0.x",
+        "luxon": "3.2.x",
         "mupdf-js": "1.1.x",
         "pdfjs": "2.4.x",
         "scramjet": "4.36.x",
         "sharp": "0.31.x",
         "simple-wcswidth": "1.0.x",
         "tempy": "3.0.x",
-        "tesseract.js": "3.0.x",
+        "tesseract.js": "4.0.x",
         "yargs": "17.6.x"
     },
     "bin": {

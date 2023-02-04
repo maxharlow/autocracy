@@ -63,13 +63,10 @@ async function initialise(origin, destination, parameters, alert) {
         const scheduler = Tesseract.createScheduler()
         await Array.from({ length: OS.cpus().length }).reduce(async previous => {
             await previous
-            const worker = Tesseract.createWorker()
-            await worker.load()
+            const worker = await Tesseract.createWorker()
             await worker.loadLanguage(options.language)
             await worker.initialize(options.language)
             await worker.setParameters({
-                tessjs_create_hocr: false,
-                tessjs_create_tsv: false,
                 tessedit_do_invert: false,
                 user_defined_dpi: options.density,
                 tessedit_pageseg_mode: Tesseract.PSM.PSM_SPARSE_TEXT
@@ -77,12 +74,16 @@ async function initialise(origin, destination, parameters, alert) {
             scheduler.addWorker(worker)
         }, Promise.resolve())
         const run = async (item, controller) => {
-            await scheduler.addJob('recognize', item.input)
-            const output = await scheduler.addJob('getPDF', item.input)
+            const output = await scheduler.addJob('recognize', item.input, {}, {
+                text: false,
+                blocks: false,
+                hocr: false,
+                tsv: false,
+                pdf: true
+            })
             if (controller.aborted) return
             controller.abort()
-            const data = Buffer.from(output.data)
-            await FSExtra.writeFile(item.output, data)
+            await FSExtra.writeFile(item.output, Buffer.from(output.data.pdf))
         }
         return {
             run,

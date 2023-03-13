@@ -11,6 +11,7 @@
     },
     "dependencies": {
         "@aws-sdk/client-textract": "3.264.x",
+        "archiver": "5.3.x",
         "chalk": "5.2.x",
         "fs-extra": "11.1.x",
         "lookpath": "1.2.x",
@@ -28,7 +29,7 @@
         "autocracy": "./bin.js"
     },
     "scripts": {
-        "postinstall": "(autocracy completion > /usr/local/share/zsh/site-functions/_autocracy) 2> /dev/null",
+        "postinstall": "autocracy completion > /usr/local/share/zsh/site-functions/_autocracy || true",
         "postuninstall": "rm -f /usr/local/share/zsh/site-functions/_autocracy"
     }
 }

@@ -1,7 +1,7 @@
 import FSExtra from 'fs-extra'
-import Scramjet from 'scramjet'
 import * as Tempy from 'tempy'
 import Sharp from 'sharp'
+import Shared from '../shared.js'
 
 async function initialise(origin, destination, parameters, alert) {
 
@@ -70,22 +70,7 @@ async function initialise(origin, destination, parameters, alert) {
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const source = () => {
-            const listing = FSExtra.opendir(options.originInitial || origin)
-            return Scramjet.DataStream.from(listing).flatMap(async entry => {
-                const exists = await FSExtra.exists(`${origin}/${entry.name}`)
-                if (!exists) return []
-                const pages = await FSExtra.readdir(`${origin}/${entry.name}`, { withFileTypes: true })
-                return pages.map(page => {
-                    if (!page.isFile()) return
-                    return {
-                        name: entry.name,
-                        input: `${origin}/${entry.name}/${page.name}`,
-                        output: `${destination}/${entry.name}/${page.name}`
-                    }
-                }).filter(x => x)
-            })
-        }
+        const source = () => Shared.source(origin, destination, { paged: true })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(check).unorder(preprocess)
         return { run, length }

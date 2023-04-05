@@ -1,5 +1,6 @@
+import Path from 'path'
 import FSExtra from 'fs-extra'
-import Scramjet from 'scramjet'
+import Shared from '../shared.js'
 
 async function initialise(origin, destination, parameters, alert) {
 
@@ -21,6 +22,7 @@ async function initialise(origin, destination, parameters, alert) {
         }
         const textPages = await Promise.all(item.pages.map(page => FSExtra.readFile(`${origin}/${item.name}/${page}`, 'utf8')))
         const text = textPages.join(' ')
+        await FSExtra.ensureDir(Path.dirname(item.output))
         await FSExtra.writeFile(item.output, text)
         alert({
             operation: 'combine-text-pages',
@@ -101,17 +103,7 @@ async function initialise(origin, destination, parameters, alert) {
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const source = () => {
-            const listing = FSExtra.opendir(options.originInitial || origin)
-            return Scramjet.DataStream.from(listing).map(entry => {
-                if (!entry.isFile()) return
-                return {
-                    name: entry.name,
-                    input: `${origin}/${entry.name}`,
-                    output: `${destination}/${entry.name}`
-                }
-            }).filter(x => x)
-        }
+        const source = () => Shared.source(parameters.originInitial || origin, destination, parameters.originInitial ? { originInput: origin } : undefined)
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(check).unorder(listing).unorder(read)
         return { run, length }

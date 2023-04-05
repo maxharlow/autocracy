@@ -1,11 +1,11 @@
 import OS from 'os'
 import Util from 'util'
 import FSExtra from 'fs-extra'
-import Scramjet from 'scramjet'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 import * as AWSTextract from '@aws-sdk/client-textract'
+import Shared from '../shared.js'
 
 async function initialise(origin, destination, parameters, alert) {
 
@@ -47,7 +47,8 @@ async function initialise(origin, destination, parameters, alert) {
                 await FSExtra.writeFile(item.output, result.stdout.replace(/\s+/g, ' '))
             }
             catch (e) {
-                const message = e.message.trim().split('\n').pop().toLowerCase()
+                controller.abort()
+                const message = e.message.trim().split('\n').pop().toLowerCase().replace(/\.$/, '')
                 throw new Error(message)
             }
         }
@@ -192,22 +193,12 @@ async function initialise(origin, destination, parameters, alert) {
     async function setup() {
         await FSExtra.ensureDir(destination)
         const convert = await converter()
-        const source = () => {
-            const listing = FSExtra.opendir(options.originInitial || origin)
-            return Scramjet.DataStream.from(listing).flatMap(async entry => {
-                const exists = await FSExtra.exists(`${origin}/${entry.name}`)
-                if (!exists) return []
-                const pages = await FSExtra.readdir(`${origin}/${entry.name}`, { withFileTypes: true })
-                return pages.map(page => {
-                    if (!page.isFile()) return
-                    return {
-                        name: entry.name,
-                        input: `${origin}/${entry.name}/${page.name}`,
-                        output: `${destination}/${entry.name}/${page.name.replace(/png$/, 'txt')}`
-                    }
-                }).filter(x => x)
-            })
-        }
+        const source = () => Shared.source(origin, destination, { paged: true }).unorder(entry => {
+            return {
+                ...entry,
+                output: entry.output.replace(/png$/, 'txt')
+            }
+        })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => {
             if (options.method === 'aws-textract') return source().unorder(check).setOptions({ maxParallel: 1 }).rate(1).unorder(convert.run)

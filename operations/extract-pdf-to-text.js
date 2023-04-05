@@ -1,8 +1,8 @@
 import Util from 'util'
 import FSExtra from 'fs-extra'
-import Scramjet from 'scramjet'
 import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
+import Shared from '../shared.js'
 
 async function initialise(origin, destination, parameters, alert) {
 
@@ -122,17 +122,7 @@ async function initialise(origin, destination, parameters, alert) {
     async function setup() {
         await FSExtra.ensureDir(destination)
         const extractor = await extract()
-        const source = () => {
-            const listing = FSExtra.opendir(options.originInitial || origin)
-            return Scramjet.DataStream.from(listing).map(entry => {
-                if (!entry.isFile()) return
-                return {
-                    name: entry.name,
-                    input: `${origin}/${entry.name}`,
-                    output: `${destination}/${entry.name}`
-                }
-            }).filter(x => x)
-        }
+        const source = () => Shared.source(origin, destination)
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(check).unorder(extractor)
         return { run, length }

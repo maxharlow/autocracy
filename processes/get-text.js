@@ -39,7 +39,6 @@ function initialise(origin, destination, parameters, alert) {
                 options.forceOCR ? origin : cacheUntagged,
                 cacheImagePages,
                 {
-                    ...options.forceOCR ? {} : { originInitial: origin },
                     method: 'shell',
                     density
                 },
@@ -51,9 +50,7 @@ function initialise(origin, destination, parameters, alert) {
             setup: () => autocracy.operations.preprocessImagePages(
                 cacheImagePages,
                 cacheImagePagesPreprocessed,
-                {
-                    originInitial: origin
-                },
+                {},
                 alert
             )
         },
@@ -63,7 +60,6 @@ function initialise(origin, destination, parameters, alert) {
                 options.preprocess ? cacheImagePagesPreprocessed : cacheImagePages,
                 cacheTextPages,
                 {
-                    originInitial: origin,
                     method: 'shell',
                     language: options.language,
                     timeout: 5 * 60,

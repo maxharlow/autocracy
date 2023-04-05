@@ -1,9 +1,9 @@
 import Util from 'util'
 import FSExtra from 'fs-extra'
-import Scramjet from 'scramjet'
 import Lookpath from 'lookpath'
 import * as Tempy from 'tempy'
 import ChildProcess from 'child_process'
+import Shared from '../shared.js'
 
 async function initialise(origin, originText, destination, parameters, alert) {
 
@@ -102,18 +102,12 @@ async function initialise(origin, originText, destination, parameters, alert) {
     async function setup() {
         await FSExtra.ensureDir(destination)
         const blend = await blender()
-        const source = () => {
-            const listing = FSExtra.opendir(origin)
-            return Scramjet.DataStream.from(listing).map(entry => {
-                if (!entry.isFile()) return
-                return {
-                    name: entry.name,
-                    input: `${origin}/${entry.name}`,
-                    inputText: `${originText}/${entry.name}`,
-                    output: `${destination}/${entry.name}`
-                }
-            }).filter(x => x)
-        }
+        const source = () => Shared.source(origin, destination).unorder(entry => {
+            return {
+                ...entry,
+                inputText: `${originText}/${entry.name}`,
+            }
+        })
         const run = () => source().unorder(check).unorder(blend)
         const length = () => source().reduce(a => a + 1, 0)
         return { run, length }

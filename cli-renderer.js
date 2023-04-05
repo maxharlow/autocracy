@@ -52,14 +52,23 @@ function predict(start, timings, left) {
 }
 
 function truncate(space, textA, textB) {
-    const textAWidth = SimpleWCSWidth.wcswidth(textA)
-    const textBWidth = SimpleWCSWidth.wcswidth(textB)
-    const slot = Math.floor(space / 2)
-    if (textAWidth <= slot && textBWidth <= slot) return [textA, textB]
+    const head = (width, text) => {
+        const letters = text.split('')
+        return letters.reduce((a, character) => SimpleWCSWidth.wcswidth(a) >= width - 1 ? a : a + character, '') + '…'
+    }
     const tail = (width, text) => {
         const letters = text.split('').reverse()
         return '…' + letters.reduce((a, character) => SimpleWCSWidth.wcswidth(a) >= width - 1 ? a : character + a, '')
     }
+    if (!textB) {
+        const textAWidth = SimpleWCSWidth.wcswidth(textA)
+        if (textAWidth <= space) return textA
+        return head(space, textA)
+    }
+    const textAWidth = SimpleWCSWidth.wcswidth(textA)
+    const textBWidth = SimpleWCSWidth.wcswidth(textB)
+    const slot = Math.floor(space / 2)
+    if (textAWidth <= slot && textBWidth <= slot) return [textA, textB]
     if (textAWidth <= slot && textBWidth > slot) return [textA, tail(space - textAWidth, textB)]
     if (textAWidth > slot && textBWidth <= slot) return [tail(space - textBWidth, textA), textB]
     return [tail(slot + space % 2, textA), tail(slot, textB)]
@@ -72,8 +81,9 @@ function draw(linesDrawn) {
     }
     const linesFull = [
         ...Object.values(alerts).map(details => {
-            const width = Process.stderr.columns - (details.operation.length + details.message.length + 5)
-            const [inputTruncated, outputTruncated] = truncate(width, details.input.replaceAll('\n', '\\n'), details.output.replaceAll('\n', '\\n'))
+            const width = Process.stderr.columns - (details.operation.length + 7)
+            const messageTruncated = truncate(width, details.message.replaceAll('\n', ' '))
+            const [inputTruncated, outputTruncated] = truncate(width - messageTruncated.length, details.input.replaceAll('\n', '\\n'), details.output.replaceAll('\n', '\\n'))
             const elements = [
                 Chalk.blue(details.operation),
                 ' ',
@@ -81,13 +91,13 @@ function draw(linesDrawn) {
                 Chalk.blue(' → '),
                 outputTruncated,
                 ' ',
-                details.importance === 'error' ? Chalk.red.bold(details.message)
-                    : details.importance === 'warning' ? Chalk.magenta.bold(details.message)
-                    : details.message.endsWith('...') ? Chalk.yellow(details.message)
-                    : details.message.toLowerCase().startsWith('done') ? Chalk.green(details.message)
-                    : Chalk.magenta(details.message.replaceAll('\n', ' '))
+                details.importance === 'error' ? Chalk.red.bold(messageTruncated)
+                    : details.importance === 'warning' ? Chalk.magenta.bold(messageTruncated)
+                    : details.message.endsWith('...') ? Chalk.yellow(messageTruncated)
+                    : details.message.toLowerCase().startsWith('done') ? Chalk.green(messageTruncated)
+                    : Chalk.magenta(messageTruncated)
             ]
-            return elements.filter(x => x).join('').slice(0, Process.stderr.cols)
+            return elements.filter(x => x).join('')
         }),
         ...Object.entries(tickers).map(([operation, { proportion, prediction }]) => {
             const width = Process.stderr.columns - (operation.length + 20)

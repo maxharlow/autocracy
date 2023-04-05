@@ -14,7 +14,6 @@
         "archiver": "5.3.x",
         "chalk": "5.2.x",
         "fs-extra": "11.1.x",
-        "klaw": "4.1.x",
         "lookpath": "1.2.x",
         "luxon": "3.3.x",
         "mupdf-js": "1.1.x",

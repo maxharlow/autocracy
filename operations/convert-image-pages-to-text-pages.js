@@ -91,18 +91,25 @@ async function initialise(origin, destination, parameters, alert) {
     function converterAWSTextract() {
         const textract = new AWSTextract.TextractClient({ region: options.awsRegion })
         const run = async (item, controller) => {
-            const detect = new AWSTextract.DetectDocumentTextCommand({
-                Document: {
-                    Bytes: await FSExtra.readFile(item.input)
-                }
-            })
-            const response = await textract.send(detect, {
-                abortSignal: controller.signal
-            })
-            if (controller.aborted) return
-            controller.abort()
-            const text = response.Blocks.filter(block => block.BlockType == 'LINE').map(block => block.Text).join(' ')
-            await FSExtra.writeFile(item.output, text.replace(/\s+/g, ' '))
+            try {
+                const detect = new AWSTextract.DetectDocumentTextCommand({
+                    Document: {
+                        Bytes: await FSExtra.readFile(item.input)
+                    }
+                })
+                const response = await textract.send(detect, {
+                    abortSignal: controller.signal
+                })
+                if (controller.aborted) return
+                controller.abort()
+                const text = response.Blocks.filter(block => block.BlockType == 'LINE').map(block => block.Text).join(' ')
+                await FSExtra.writeFile(item.output, text.replace(/\s+/g, ' '))
+            }
+            catch (e) {
+                controller.abort()
+                const message = e.message.toLowerCase()
+                throw new Error(message)
+            }
         }
         return {
             run,
@@ -201,7 +208,8 @@ async function initialise(origin, destination, parameters, alert) {
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => {
-            if (options.method === 'aws-textract') return source().unorder(check).setOptions({ maxParallel: 1 }).rate(1).unorder(convert.run)
+            // AWS Textract DetectDocumentText transactions per second quotas: https://docs.aws.amazon.com/general/latest/gr/textract.html#limits_textract
+            if (options.method === 'aws-textract') return source().unorder(check).setOptions({ maxParallel: 10 }).unorder(convert.run)
             return source().unorder(check).unorder(convert.run)
         }
         return {

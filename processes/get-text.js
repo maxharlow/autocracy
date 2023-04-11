@@ -5,6 +5,9 @@ function initialise(origin, destination, parameters, alert) {
         forceOCR: false,
         preprocess: false,
         language: 'eng',
+        extractPDFToTextWith: 'mupdf',
+        convertPDFToImagePagesWith: 'mupdf',
+        convertImagePagesToTextPagesWith: 'tesseract',
         ...parameters
     }
     const cacheUntagged = '.autocracy-cache/untagged'
@@ -19,7 +22,7 @@ function initialise(origin, destination, parameters, alert) {
                 origin,
                 destination,
                 {
-                    method: 'shell'
+                    method: options.extractPDFToTextWith
                 },
                 alert
             )
@@ -39,7 +42,7 @@ function initialise(origin, destination, parameters, alert) {
                 options.forceOCR ? origin : cacheUntagged,
                 cacheImagePages,
                 {
-                    method: 'shell',
+                    method: options.convertPDFToImagePagesWith,
                     density
                 },
                 alert
@@ -60,7 +63,7 @@ function initialise(origin, destination, parameters, alert) {
                 options.preprocess ? cacheImagePagesPreprocessed : cacheImagePages,
                 cacheTextPages,
                 {
-                    method: 'shell',
+                    method: options.convertImagePagesToTextPagesWith,
                     language: options.language,
                     timeout: 5 * 60,
                     density
@@ -71,10 +74,10 @@ function initialise(origin, destination, parameters, alert) {
         {
             name: 'Combining text pages into full texts',
             setup: () => autocracy.operations.combineTextPages(
+                origin,
                 cacheTextPages,
                 destination,
                 {
-                    originInitial: origin,
                     originPrior: cacheImagePages
                 },
                 alert

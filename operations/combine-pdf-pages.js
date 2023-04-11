@@ -6,14 +6,14 @@ import * as Tempy from 'tempy'
 import ChildProcess from 'child_process'
 import Shared from '../shared.js'
 
-async function initialise(origin, destination, parameters, alert) {
+async function initialise(origin, originPages, destination, parameters, alert) {
 
     const options = {
-        method: 'shell',
+        method: 'mupdf',
         ...parameters
     }
 
-    async function combinerShell() {
+    async function combinerMuPDF() {
         const isInstalled = await Lookpath.lookpath('mutool')
         if (!isInstalled) throw new Error('MuPDF not found!')
         const escaped = path => path.replaceAll('"', '\\"')
@@ -40,7 +40,7 @@ async function initialise(origin, destination, parameters, alert) {
         return run
     }
 
-    async function combinerLibrary() {
+    async function combinerPDFJS() {
         const run = async item => {
             const document = new PDF.Document()
             await item.pages.reduce(async (previous, page) => {
@@ -57,8 +57,8 @@ async function initialise(origin, destination, parameters, alert) {
 
     async function combiner() {
         const methods = {
-            shell: combinerShell,
-            library: combinerLibrary // slightly slower, has a 2GB limit for output files
+            mupdf: combinerMuPDF,
+            pdfjs: combinerPDFJS // slightly slower, has a 2GB limit for output files
         }
         const method = await methods[options.method]()
         const run = async item => {
@@ -150,9 +150,10 @@ async function initialise(origin, destination, parameters, alert) {
     }
 
     async function setup() {
+        console.log(origin,originPages,destination)
         await FSExtra.ensureDir(destination)
         const combine = await combiner()
-        const source = () => Shared.source(parameters.originInitial || origin, destination, parameters.originInitial ? { originInput: origin } : undefined)
+        const source = () => Shared.source(origin, destination, { originInput: originPages })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(check).unorder(listing).unorder(combine)
         return { run, length }

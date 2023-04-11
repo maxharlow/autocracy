@@ -8,11 +8,11 @@ import Shared from '../shared.js'
 async function initialise(origin, originText, destination, parameters, alert) {
 
     const options = {
-        method: 'shell',
+        method: 'qpdf',
         ...parameters
     }
 
-    async function blenderShell() {
+    async function blenderQPDF() {
         const isInstalled = await Lookpath.lookpath('qpdf')
         if (!isInstalled) throw new Error('QPDF not found!')
         const escaped = path => path.replaceAll('"', '\\"')
@@ -39,7 +39,7 @@ async function initialise(origin, originText, destination, parameters, alert) {
 
     async function blender() {
         const methods = {
-            shell: blenderShell
+            qpdf: blenderQPDF
         }
         const method = await methods[options.method]()
         const run = async item => {

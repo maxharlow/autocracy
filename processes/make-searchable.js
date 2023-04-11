@@ -5,6 +5,11 @@ function initialise(origin, destination, parameters, alert) {
         forceOCR: false,
         preprocess: false,
         language: 'eng',
+        copyPDFTaggedWith: 'mupdf',
+        convertPDFToImagePagesWith: 'mupdf',
+        convertImagePagesToPDFTextPagesWith: 'tesseract',
+        combinePDFPagesWith: 'mupdf',
+        blendPDFTextPagesWith: 'qpdf',
         ...parameters
     }
     const cacheUntagged = '.autocracy-cache/untagged'
@@ -20,7 +25,7 @@ function initialise(origin, destination, parameters, alert) {
                 origin,
                 destination,
                 {
-                    method: 'shell'
+                    method: options.copyPDFTaggedWith
                 },
                 alert
             )
@@ -40,7 +45,7 @@ function initialise(origin, destination, parameters, alert) {
                 options.forceOCR ? origin : cacheUntagged,
                 cacheImagePages,
                 {
-                    method: 'shell',
+                    method: options.convertPDFToImagePagesWith,
                     density
                 },
                 alert
@@ -61,7 +66,7 @@ function initialise(origin, destination, parameters, alert) {
                 options.preprocess ? cacheImagePagesPreprocessed : cacheImagePages,
                 cachePDFTextPages,
                 {
-                    method: 'shell',
+                    method: options.convertImagePagesToPDFTextPagesWith,
                     language: options.language,
                     timeout: 5 * 60,
                     density
@@ -72,12 +77,12 @@ function initialise(origin, destination, parameters, alert) {
         {
             name: 'Combining PDF text pages',
             setup: () => autocracy.operations.combinePDFPages(
+                origin,
                 cachePDFTextPages,
                 cachePDFText,
                 {
-                    originInitial: origin,
                     originPrior: cacheImagePages,
-                    method: 'shell'
+                    method: options.combinePDFPagesWith
                 },
                 alert
             )
@@ -89,7 +94,7 @@ function initialise(origin, destination, parameters, alert) {
                 cachePDFText,
                 destination,
                 {
-                    method: 'shell'
+                    method: options.blendPDFTextPagesWith
                 },
                 alert
             )

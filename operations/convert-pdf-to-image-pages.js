@@ -9,12 +9,12 @@ import Shared from '../shared.js'
 async function initialise(origin, destination, parameters, alert) {
 
     const options = {
-        method: 'shell',
+        method: 'mupdf',
         density: 300,
         ...parameters
     }
 
-    async function converterShell() {
+    async function converterMuPDF() {
         const isInstalled = await Lookpath.lookpath('mutool')
         if (!isInstalled) throw new Error('MuPDF not found!')
         const escaped = path => path.replaceAll('"', '\\"')
@@ -40,7 +40,7 @@ async function initialise(origin, destination, parameters, alert) {
         return run
     }
 
-    async function converterLibrary() {
+    async function converterMuPDFJS() {
         const consoleWarn = console.warn // suppress MuPDF messages
         console.warn = () => {} // suppress MuPDF messages
         const processor = await MuPDF.createMuPdf()
@@ -70,8 +70,8 @@ async function initialise(origin, destination, parameters, alert) {
 
     async function convert() {
         const methods = {
-            shell: converterShell,
-            library: converterLibrary
+            mupdf: converterMuPDF,
+            mupdfjs: converterMuPDFJS
         }
         const method = await methods[options.method]()
         const run = async item => {

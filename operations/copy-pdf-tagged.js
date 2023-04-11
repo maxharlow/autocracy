@@ -7,11 +7,11 @@ import Shared from '../shared.js'
 async function initialise(origin, destination, parameters, alert) {
 
     const options = {
-        method: 'shell',
+        method: 'mupdf',
         ...parameters
     }
 
-    async function detectorShell() {
+    async function detectorMuPDF() {
         const isInstalled = await Lookpath.lookpath('mutool')
         if (!isInstalled) throw new Error('MuPDF not found!')
         const escaped = path => path.replaceAll('"', '\\"')
@@ -38,7 +38,7 @@ async function initialise(origin, destination, parameters, alert) {
     async function copyMaybe(item) {
         if (item.skip) return item
         const methods = {
-            shell: detectorShell
+            mupdf: detectorMuPDF
         }
         const method = await methods[options.method]()
         const isTagged = await method(item)

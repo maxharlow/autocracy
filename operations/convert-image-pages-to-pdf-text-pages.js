@@ -11,7 +11,7 @@ import Shared from '../shared.js'
 async function initialise(origin, destination, parameters, alert) {
 
     const options = {
-        method: 'shell',
+        method: 'tesseract',
         language: 'eng',
         density: 300,
         timeout: 5 * 60, // seconds
@@ -30,7 +30,7 @@ async function initialise(origin, destination, parameters, alert) {
         return controller
     }
 
-    async function converterShell() {
+    async function converterTesseract() {
         const isInstalled = await Lookpath.lookpath('tesseract')
         if (!isInstalled) throw new Error('Tesseract not found!')
         const escaped = path => path.replaceAll('"', '\\"')
@@ -59,7 +59,7 @@ async function initialise(origin, destination, parameters, alert) {
         }
     }
 
-    async function converterLibrary() {
+    async function converterTesseractJS() {
         const scheduler = Tesseract.createScheduler()
         await Array.from({ length: OS.cpus().length }).reduce(async previous => {
             await previous
@@ -93,8 +93,8 @@ async function initialise(origin, destination, parameters, alert) {
 
     async function converter() {
         const methods = {
-            library: converterLibrary, // much slower
-            shell: converterShell
+            tesseractJS: converterTesseractJS, // much slower
+            tesseract: converterTesseract
         }
         const method = await methods[options.method]()
         const run = async item => {

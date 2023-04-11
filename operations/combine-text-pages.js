@@ -2,7 +2,7 @@ import Path from 'path'
 import FSExtra from 'fs-extra'
 import Shared from '../shared.js'
 
-async function initialise(origin, destination, parameters, alert) {
+async function initialise(origin, originPages, destination, parameters, alert) {
 
     const options = {
         ...parameters
@@ -20,7 +20,7 @@ async function initialise(origin, destination, parameters, alert) {
             })
             return { ...item, skip: true } // we can use cached output
         }
-        const textPages = await Promise.all(item.pages.map(page => FSExtra.readFile(`${origin}/${item.name}/${page}`, 'utf8')))
+        const textPages = await Promise.all(item.pages.map(page => FSExtra.readFile(`${item.input}/${page}`, 'utf8')))
         const text = textPages.join(' ')
         await FSExtra.ensureDir(Path.dirname(item.output))
         await FSExtra.writeFile(item.output, text)
@@ -103,7 +103,7 @@ async function initialise(origin, destination, parameters, alert) {
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const source = () => Shared.source(parameters.originInitial || origin, destination, parameters.originInitial ? { originInput: origin } : undefined)
+        const source = () => Shared.source(origin, destination, { originInput: originPages })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(check).unorder(listing).unorder(read)
         return { run, length }

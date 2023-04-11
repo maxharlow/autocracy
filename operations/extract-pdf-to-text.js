@@ -7,11 +7,11 @@ import Shared from '../shared.js'
 async function initialise(origin, destination, parameters, alert) {
 
     const options = {
-        method: 'shell',
+        method: 'mupdf',
         ...parameters
     }
 
-    async function extractorShell() {
+    async function extractorMuPDF() {
         const isInstalled = await Lookpath.lookpath('mutool')
         if (!isInstalled) throw new Error('MuPDF not found!')
         const escaped = path => path.replaceAll('"', '\\"')
@@ -40,7 +40,7 @@ async function initialise(origin, destination, parameters, alert) {
 
     async function extract() {
         const methods = {
-            shell: extractorShell
+            mupdf: extractorMuPDF
         }
         const method = await methods[options.method]()
         const run = async item => {

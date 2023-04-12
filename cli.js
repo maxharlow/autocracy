@@ -106,7 +106,7 @@ async function setup() {
             .option('l', { alias: 'language', type: 'string', describe: 'Language to expect to find (ignored by AWS)', default: 'eng' })
             .option('d', { alias: 'density', type: 'number', describe: 'Image resolution, in dots per inch', default: 300 })
             .option('t', { alias: 'timeout', type: 'number', describe: 'The maximum amount of time that the OCR should take, in seconds', default: 5 * 60 })
-            .option('a', { alias: 'aws-region', type: 'string', describe: 'The AWS region, if applicable', default: 'eu-west-1' })
+            .option('a', { alias: 'aws-region', type: 'string', describe: 'The AWS region, if applicable' })
     })
     instructions.command('convert-image-pages-to-pdf-text-pages', false, args => {
         args

@@ -14,7 +14,7 @@ async function initialise(origin, destination, parameters, alert) {
         language: 'eng',
         density: 300,
         timeout: 5 * 60, // seconds
-        awsRegion: 'eu-west-1',
+        awsRegion: undefined, // will be picked by AWS client
         ...parameters
     }
 
@@ -88,8 +88,13 @@ async function initialise(origin, destination, parameters, alert) {
         }
     }
 
-    function converterAWSTextract() {
+    async function converterAWSTextract() {
         const textract = new AWSTextract.TextractClient({ region: options.awsRegion })
+        alert({
+            operation: 'convert-image-pages-to-text-pages',
+            message: `using ${await textract.config.region()} AWS region`,
+            importance: 'warning'
+        })
         const run = async (item, controller) => {
             try {
                 const detect = new AWSTextract.DetectDocumentTextCommand({

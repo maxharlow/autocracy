@@ -83,13 +83,13 @@ function draw(linesDrawn) {
         ...Object.values(alerts).map(details => {
             const width = Process.stderr.columns - (details.operation.length + 7)
             const messageTruncated = truncate(width, details.message.replaceAll('\n', ' '))
-            const [inputTruncated, outputTruncated] = truncate(width - messageTruncated.length, details.input.replaceAll('\n', '\\n'), details.output.replaceAll('\n', '\\n'))
+            const [inputTruncated, outputTruncated] = details.input && details.output ? truncate(width - messageTruncated.length, details.input.replaceAll('\n', '\\n'), details.output.replaceAll('\n', '\\n')) : []
             const elements = [
                 Chalk.blue(details.operation),
-                ' ',
-                inputTruncated,
-                Chalk.blue(' → '),
-                outputTruncated,
+                inputTruncated ? ' ' : null,
+                inputTruncated ? inputTruncated : null,
+                inputTruncated ? Chalk.blue(' → ') : null,
+                outputTruncated ? outputTruncated : null,
                 ' ',
                 details.importance === 'error' ? Chalk.red.bold(messageTruncated)
                     : details.importance === 'warning' ? Chalk.magenta.bold(messageTruncated)

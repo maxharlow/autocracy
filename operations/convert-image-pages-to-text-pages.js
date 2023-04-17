@@ -5,11 +5,13 @@ import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 import * as AWSTextract from '@aws-sdk/client-textract'
-import Shared from '../shared.js'
+import shared from '../shared.js'
 
 async function initialise(origin, destination, parameters, alert) {
 
+    const operation = 'convert-image-pages-to-text-pages'
     const options = {
+        useCache: false,
         method: 'tesseract',
         language: 'eng',
         density: 300,
@@ -17,6 +19,8 @@ async function initialise(origin, destination, parameters, alert) {
         awsRegion: undefined, // will be picked by AWS client
         ...parameters
     }
+    const cache = await shared.caching(operation)
+    const waypoint = shared.waypointWith(alert, cache)
 
     function withTimeout(alternative) {
         const controller = new AbortController()
@@ -90,8 +94,8 @@ async function initialise(origin, destination, parameters, alert) {
 
     async function converterAWSTextract() {
         const textract = new AWSTextract.TextractClient({ region: options.awsRegion })
-        alert({
-            operation: 'convert-image-pages-to-text-pages',
+        waypoint({
+            operation,
             message: `using ${await textract.config.region()} AWS region`,
             importance: 'warning'
         })
@@ -132,8 +136,8 @@ async function initialise(origin, destination, parameters, alert) {
         const run = async item => {
             if (item.skip) return item
             await FSExtra.ensureDir(`${destination}/${item.name}`)
-            alert({
-                operation: 'convert-image-pages-to-text-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'converting...'
@@ -143,8 +147,8 @@ async function initialise(origin, destination, parameters, alert) {
                     await FSExtra.writeFile(item.output, '') // write a blank file
                 })
                 await method.run(item, controller)
-                alert({
-                    operation: 'convert-image-pages-to-text-pages',
+                waypoint({
+                    operation,
                     input: item.input,
                     output: item.output,
                     message: 'done'
@@ -153,8 +157,8 @@ async function initialise(origin, destination, parameters, alert) {
             }
             catch (e) {
                 if (e.message === 'the operation was aborted') {
-                    alert({
-                        operation: 'convert-image-pages-to-text-pages',
+                    waypoint({
+                        operation,
                         input: item.input,
                         output: item.output,
                         message: `timed out after ${options.timeout}s`,
@@ -162,8 +166,8 @@ async function initialise(origin, destination, parameters, alert) {
                     })
                     return item // timeouts aren't errors
                 }
-                alert({
-                    operation: 'convert-image-pages-to-text-pages',
+                waypoint({
+                    operation,
                     input: item.input,
                     output: item.output,
                     message: e.message,
@@ -179,10 +183,23 @@ async function initialise(origin, destination, parameters, alert) {
     }
 
     async function check(item) {
+        if (options.useCache) {
+            const cached = cache.existing.get(item.input)
+            if (cached) {
+                waypoint({
+                    operation,
+                    input: item.input,
+                    output: item.output,
+                    cached: true,
+                    ...cached
+                })
+                return { ...item, skip: true }
+            }
+        }
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
-            alert({
-                operation: 'convert-image-pages-to-text-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'output exists'
@@ -191,8 +208,8 @@ async function initialise(origin, destination, parameters, alert) {
         }
         const inputExists = await FSExtra.exists(item.input)
         if (!inputExists) {
-            alert({
-                operation: 'convert-image-pages-to-text-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'no input'
@@ -203,9 +220,21 @@ async function initialise(origin, destination, parameters, alert) {
     }
 
     async function setup() {
+        if (options.useCache) {
+            const cached = cache.existing.get(item.input)
+            if (cached) {
+                waypoint({
+                    operation,
+                    input: item.input,
+                    output: item.output,
+                     ...cached
+                })
+                return { ...item, skip: true }
+            }
+        }
         await FSExtra.ensureDir(destination)
         const convert = await converter()
-        const source = () => Shared.source(origin, destination, { paged: true }).unorder(entry => {
+        const source = () => shared.source(origin, destination, { paged: true }).unorder(entry => {
             return {
                 ...entry,
                 output: entry.output.replace(/png$/, 'txt')

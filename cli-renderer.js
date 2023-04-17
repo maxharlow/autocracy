@@ -81,7 +81,7 @@ function draw(linesDrawn) {
     }
     const linesFull = [
         ...Object.values(alerts).map(details => {
-            const width = Process.stderr.columns - (details.operation.length + 7)
+            const width = Process.stderr.columns - (details.operation.length + 7) - (details.cached ? 8 : 0)
             const messageTruncated = truncate(width, details.message.replaceAll('\n', ' '))
             const [inputTruncated, outputTruncated] = details.input && details.output ? truncate(width - messageTruncated.length, details.input.replaceAll('\n', '\\n'), details.output.replaceAll('\n', '\\n')) : []
             const elements = [
@@ -95,7 +95,9 @@ function draw(linesDrawn) {
                     : details.importance === 'warning' ? Chalk.magenta.bold(messageTruncated)
                     : details.message.endsWith('...') ? Chalk.yellow(messageTruncated)
                     : details.message.toLowerCase().startsWith('done') ? Chalk.green(messageTruncated)
-                    : Chalk.magenta(messageTruncated)
+                    : Chalk.magenta(messageTruncated),
+                details.cached ? ' ' : null,
+                details.cached ? Chalk.grey('(cached)') : null
             ]
             return elements.filter(x => x).join('')
         }),

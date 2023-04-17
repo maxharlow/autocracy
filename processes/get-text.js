@@ -2,6 +2,7 @@ import autocracy from './../autocracy.js'
 
 function initialise(origin, destination, parameters, alert) {
     const options = {
+        useCache: false,
         forceOCR: false,
         preprocess: false,
         language: 'eng',
@@ -22,6 +23,7 @@ function initialise(origin, destination, parameters, alert) {
                 origin,
                 destination,
                 {
+                    useCache: options.useCache,
                     method: options.extractPDFToTextWith
                 },
                 alert
@@ -33,6 +35,9 @@ function initialise(origin, destination, parameters, alert) {
                 origin,
                 destination,
                 cacheUntagged,
+                {
+                    useCache: options.useCache
+                },
                 alert
             )
         },
@@ -42,6 +47,7 @@ function initialise(origin, destination, parameters, alert) {
                 options.forceOCR ? origin : cacheUntagged,
                 cacheImagePages,
                 {
+                    useCache: options.useCache,
                     method: options.convertPDFToImagePagesWith,
                     density
                 },
@@ -53,7 +59,9 @@ function initialise(origin, destination, parameters, alert) {
             setup: () => autocracy.operations.preprocessImagePages(
                 cacheImagePages,
                 cacheImagePagesPreprocessed,
-                {},
+                {
+                    useCache: options.useCache
+                },
                 alert
             )
         },
@@ -63,6 +71,7 @@ function initialise(origin, destination, parameters, alert) {
                 options.preprocess ? cacheImagePagesPreprocessed : cacheImagePages,
                 cacheTextPages,
                 {
+                    useCache: options.useCache,
                     method: options.convertImagePagesToTextPagesWith,
                     language: options.language,
                     timeout: 5 * 60,
@@ -78,6 +87,7 @@ function initialise(origin, destination, parameters, alert) {
                 cacheTextPages,
                 destination,
                 {
+                    useCache: options.useCache,
                     originPrior: cacheImagePages
                 },
                 alert

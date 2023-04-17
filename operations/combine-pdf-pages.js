@@ -4,14 +4,18 @@ import PDF from 'pdfjs'
 import Lookpath from 'lookpath'
 import * as Tempy from 'tempy'
 import ChildProcess from 'child_process'
-import Shared from '../shared.js'
+import shared from '../shared.js'
 
 async function initialise(origin, originPages, destination, parameters, alert) {
 
+    const operation = 'combine-pdf-pages'
     const options = {
+        useCache: false,
         method: 'mupdf',
         ...parameters
     }
+    const cache = await shared.caching(operation)
+    const waypoint = shared.waypointWith(alert, cache)
 
     async function combinerMuPDF() {
         const isInstalled = await Lookpath.lookpath('mutool')
@@ -63,16 +67,16 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         const method = await methods[options.method]()
         const run = async item => {
             if (item.skip) return item
-            alert({
-                operation: 'combine-pdf-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: `combining ${item.pages.length} pages...`
             })
             try {
                 await method(item)
-                alert({
-                    operation: 'combine-pdf-pages',
+                waypoint({
+                    operation,
                     input: item.input,
                     output: item.output,
                     message: 'done'
@@ -80,8 +84,8 @@ async function initialise(origin, originPages, destination, parameters, alert) {
                 return item
             }
             catch (e) {
-                alert({
-                    operation: 'combine-pdf-pages',
+                waypoint({
+                    operation,
                     input: item.input,
                     output: item.output,
                     message: e.message,
@@ -97,8 +101,8 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         if (item.skip) return item
         const pagesUnsorted = await FSExtra.readdir(item.input)
         if (pagesUnsorted.length === 0) {
-            alert({
-                operation: 'combine-pdf-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'no pages found',
@@ -109,8 +113,8 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         if (options.originPrior) {
             const pagesPrior = await FSExtra.readdir(`${options.originPrior}/${item.name}`)
             if (pagesUnsorted.length < pagesPrior.length) {
-                alert({
-                    operation: 'combine-pdf-pages',
+                waypoint({
+                    operation,
                     input: item.input,
                     output: item.output,
                     message: 'pagefiles missing',
@@ -126,10 +130,23 @@ async function initialise(origin, originPages, destination, parameters, alert) {
     }
 
     async function check(item) {
+        if (options.useCache) {
+            const cached = cache.existing.get(item.input)
+            if (cached) {
+                waypoint({
+                    operation,
+                    input: item.input,
+                    output: item.output,
+                    cached: true,
+                    ...cached
+                })
+                return { ...item, skip: true }
+            }
+        }
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
-            alert({
-                operation: 'combine-pdf-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'output exists'
@@ -138,8 +155,8 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         }
         const inputExists = await FSExtra.exists(item.input)
         if (!inputExists) {
-            alert({
-                operation: 'combine-pdf-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'no input'
@@ -153,7 +170,7 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         console.log(origin,originPages,destination)
         await FSExtra.ensureDir(destination)
         const combine = await combiner()
-        const source = () => Shared.source(origin, destination, { originInput: originPages })
+        const source = () => shared.source(origin, destination, { originInput: originPages })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(check).unorder(listing).unorder(combine)
         return { run, length }

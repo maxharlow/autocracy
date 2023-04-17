@@ -2,6 +2,7 @@ import autocracy from './../autocracy.js'
 
 function initialise(origin, destination, parameters, alert) {
     const options = {
+        useCache: false,
         forceOCR: false,
         preprocess: false,
         language: 'eng',
@@ -25,6 +26,7 @@ function initialise(origin, destination, parameters, alert) {
                 origin,
                 destination,
                 {
+                    useCache: options.useCache,
                     method: options.copyPDFTaggedWith
                 },
                 alert
@@ -36,6 +38,9 @@ function initialise(origin, destination, parameters, alert) {
                 origin,
                 destination,
                 cacheUntagged,
+                {
+                    useCache: options.useCache
+                },
                 alert
             )
         },
@@ -45,6 +50,7 @@ function initialise(origin, destination, parameters, alert) {
                 options.forceOCR ? origin : cacheUntagged,
                 cacheImagePages,
                 {
+                    useCache: options.useCache,
                     method: options.convertPDFToImagePagesWith,
                     density
                 },
@@ -56,7 +62,9 @@ function initialise(origin, destination, parameters, alert) {
             setup: () => autocracy.operations.preprocessImagePages(
                 cacheImagePages,
                 cacheImagePagesPreprocessed,
-                {},
+                {
+                    useCache: options.useCache
+                },
                 alert
             )
         },
@@ -66,6 +74,7 @@ function initialise(origin, destination, parameters, alert) {
                 options.preprocess ? cacheImagePagesPreprocessed : cacheImagePages,
                 cachePDFTextPages,
                 {
+                    useCache: options.useCache,
                     method: options.convertImagePagesToPDFTextPagesWith,
                     language: options.language,
                     timeout: 5 * 60,
@@ -81,6 +90,7 @@ function initialise(origin, destination, parameters, alert) {
                 cachePDFTextPages,
                 cachePDFText,
                 {
+                    useCache: options.useCache,
                     originPrior: cacheImagePages,
                     method: options.combinePDFPagesWith
                 },
@@ -94,6 +104,7 @@ function initialise(origin, destination, parameters, alert) {
                 cachePDFText,
                 destination,
                 {
+                    useCache: options.useCache,
                     method: options.blendPDFTextPagesWith
                 },
                 alert

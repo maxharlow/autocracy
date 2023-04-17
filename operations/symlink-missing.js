@@ -1,13 +1,21 @@
 import FSExtra from 'fs-extra'
-import Shared from '../shared.js'
+import shared from '../shared.js'
 
-async function initialise(origin, alternative, destination, alert) {
+async function initialise(origin, alternative, destination, parameters, alert) {
+
+    const operation = 'symlink-missing'
+    const options = {
+        useCache: false,
+        ...parameters
+    }
+    const cache = await shared.caching(operation)
+    const waypoint = shared.waypointWith(alert, cache)
 
     async function symlink(item) {
         if (item.skip) return item
         await FSExtra.ensureSymlink(item.input, item.output)
-        alert({
-            operation: 'symlink-missing',
+        waypoint({
+            operation,
             input: item.input,
             output: item.output,
             message: 'done'
@@ -16,10 +24,23 @@ async function initialise(origin, alternative, destination, alert) {
     }
 
     async function check(item) {
+        if (options.useCache) {
+            const cached = cache.existing.get(item.input)
+            if (cached) {
+                waypoint({
+                    operation,
+                    input: item.input,
+                    output: item.output,
+                    cached: true,
+                    ...cached
+                })
+                return { ...item, skip: true }
+            }
+        }
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
-            alert({
-                operation: 'symlink-missing',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'output exists'
@@ -29,8 +50,8 @@ async function initialise(origin, alternative, destination, alert) {
         const buffer = Buffer.alloc(5)
         await FSExtra.read(await FSExtra.open(item.input, 'r'), buffer, 0, 5)
         if (buffer.toString() != '%PDF-') {
-            alert({
-                operation: 'symlink-missing',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'not a valid PDF file',
@@ -40,8 +61,8 @@ async function initialise(origin, alternative, destination, alert) {
         }
         const alternativeExists = await FSExtra.exists(item.alternative)
         if (alternativeExists) {
-            alert({
-                operation: 'symlink-missing',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'alternative exists'
@@ -53,7 +74,7 @@ async function initialise(origin, alternative, destination, alert) {
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const source = () => Shared.source(origin, destination).unorder(entry => {
+        const source = () => shared.source(origin, destination).unorder(entry => {
             return {
                 ...entry,
                 alternative: `${alternative}/${entry.name}` // symlink won't be created if this exists

@@ -12,6 +12,7 @@
     "dependencies": {
         "@aws-sdk/client-textract": "3.303.x",
         "archiver": "5.3.x",
+        "better-sqlite3": "8.3.x",
         "chalk": "5.2.x",
         "fs-extra": "11.1.x",
         "lookpath": "1.2.x",

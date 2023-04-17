@@ -1,19 +1,23 @@
 import Path from 'path'
 import FSExtra from 'fs-extra'
-import Shared from '../shared.js'
+import shared from '../shared.js'
 
 async function initialise(origin, originPages, destination, parameters, alert) {
 
+    const operation = 'combine-text-pages'
     const options = {
+        useCache: false,
         ...parameters
     }
+    const cache = await shared.caching(operation)
+    const waypoint = shared.waypointWith(alert, cache)
 
     async function read(item) {
         if (item.skip) return item
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
-            alert({
-                operation: 'combine-text-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'output exists'
@@ -24,8 +28,8 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         const text = textPages.join(' ')
         await FSExtra.ensureDir(Path.dirname(item.output))
         await FSExtra.writeFile(item.output, text)
-        alert({
-            operation: 'combine-text-pages',
+        waypoint({
+            operation,
             input: item.input,
             output: item.output,
             message: 'done'
@@ -35,16 +39,16 @@ async function initialise(origin, originPages, destination, parameters, alert) {
 
     async function listing(item) {
         if (item.skip) return item
-        alert({
-            operation: 'combine-text-pages',
+        waypoint({
+            operation,
             input: item.input,
             output: item.output,
             message: 'combining...'
         })
         const pagesUnsorted = await FSExtra.readdir(item.input)
         if (pagesUnsorted.length === 0) {
-            alert({
-                operation: 'combine-text-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'no pages found',
@@ -55,8 +59,8 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         if (options.originPrior) {
             const pagesPrior = await FSExtra.readdir(`${options.originPrior}/${item.name}`)
             if (pagesUnsorted.length < pagesPrior.length) {
-                alert({
-                    operation: 'combine-text-pages',
+                waypoint({
+                    operation,
                     input: item.input,
                     output: item.output,
                     message: 'pagefiles missing',
@@ -68,8 +72,8 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         const pages = pagesUnsorted.sort((a, b) => {
             return Number(a.replace(/[^0-9]/g, '')) - Number(b.replace(/[^0-9]/g, ''))
         })
-        alert({
-            operation: 'combine-text-pages',
+        waypoint({
+            operation,
             input: item.input,
             output: item.output,
             message: `combining ${pages.length} pages...`
@@ -78,10 +82,23 @@ async function initialise(origin, originPages, destination, parameters, alert) {
     }
 
     async function check(item) {
+        if (options.useCache) {
+            const cached = cache.existing.get(item.input)
+            if (cached) {
+                waypoint({
+                    operation,
+                    input: item.input,
+                    output: item.output,
+                    cached: true,
+                    ...cached
+                })
+                return { ...item, skip: true }
+            }
+        }
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
-            alert({
-                operation: 'combine-text-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'output exists'
@@ -90,8 +107,8 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         }
         const inputExists = await FSExtra.exists(item.input)
         if (!inputExists) {
-            alert({
-                operation: 'combine-text-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'no input'
@@ -103,7 +120,7 @@ async function initialise(origin, originPages, destination, parameters, alert) {
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const source = () => Shared.source(origin, destination, { originInput: originPages })
+        const source = () => shared.source(origin, destination, { originInput: originPages })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(check).unorder(listing).unorder(read)
         return { run, length }

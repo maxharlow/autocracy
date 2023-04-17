@@ -1,19 +1,23 @@
 import FSExtra from 'fs-extra'
 import * as Tempy from 'tempy'
 import Sharp from 'sharp'
-import Shared from '../shared.js'
+import shared from '../shared.js'
 
 async function initialise(origin, destination, parameters, alert) {
 
+    const operation = 'preprocess-image-pages'
     const options = {
+        useCache: false,
         ...parameters
     }
+    const cache = await shared.caching(operation)
+    const waypoint = shared.waypointWith(alert, cache)
 
     async function preprocess(item) {
         if (item.skip) return item
         await FSExtra.ensureDir(`${destination}/${item.name}`)
-        alert({
-            operation: 'preprocess-image-pages',
+        waypoint({
+            operation,
             input: item.input,
             output: item.output,
             message: 'preprocessing...'
@@ -24,8 +28,8 @@ async function initialise(origin, destination, parameters, alert) {
                 .threshold(100)
                 .toFile(output)
             await FSExtra.move(output, item.output)
-            alert({
-                operation: 'preprocess-image-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'done'
@@ -33,8 +37,8 @@ async function initialise(origin, destination, parameters, alert) {
             return item
         }
         catch (e) {
-            alert({
-                operation: 'preprocess-image-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: e.message,
@@ -45,10 +49,23 @@ async function initialise(origin, destination, parameters, alert) {
     }
 
     async function check(item) {
+        if (options.useCache) {
+            const cached = cache.existing.get(item.input)
+            if (cached) {
+                waypoint({
+                    operation,
+                    input: item.input,
+                    output: item.output,
+                    cached: true,
+                    ...cached
+                })
+                return { ...item, skip: true }
+            }
+        }
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
-            alert({
-                operation: 'preprocess-image-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'output exists'
@@ -57,8 +74,8 @@ async function initialise(origin, destination, parameters, alert) {
         }
         const inputExists = await FSExtra.exists(item.input)
         if (!inputExists) {
-            alert({
-                operation: 'preprocess-image-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'no input'
@@ -70,7 +87,7 @@ async function initialise(origin, destination, parameters, alert) {
 
     async function setup() {
         await FSExtra.ensureDir(destination)
-        const source = () => Shared.source(origin, destination, { paged: true })
+        const source = () => shared.source(origin, destination, { paged: true })
         const length = () => source().reduce(a => a + 1, 0)
         const run = () => source().unorder(check).unorder(preprocess)
         return { run, length }

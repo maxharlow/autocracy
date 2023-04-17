@@ -1,6 +1,7 @@
 import Path from 'path'
 import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
+import BetterSqlite3 from 'better-sqlite3'
 
 async function* walk(pathRoot) {
     const filenames = await FSExtra.readdir(pathRoot)
@@ -24,4 +25,27 @@ function source(origin, destination, { paged, originInput } = {}) {
     })
 }
 
-export default { source }
+async function caching(operation) {
+    await FSExtra.ensureDir('.autocracy-cache')
+    const database = new BetterSqlite3('.autocracy-cache/register.db')
+    const operationName = operation.replaceAll('-', '_')
+    database.prepare(`create table if not exists ${operationName} (input primary key, message, importance)`).run()
+    database.prepare(`create index if not exists ${operationName}_input on ${operationName} (input)`).run()
+    return {
+        existing: database.prepare(`select message, importance from ${operationName} where input = ?`),
+        add: database.prepare(`insert or replace into ${operationName} (input, message, importance) values (@input, @message, @importance)`)
+    }
+}
+
+function waypointWith(alert, cache) {
+    return details => {
+        alert(details)
+        cache.add.run({
+            input: details.input,
+            message: details.message,
+            importance: details.importance
+        })
+    }
+}
+
+export default { source, caching, waypointWith }

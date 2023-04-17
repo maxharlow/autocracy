@@ -3,14 +3,18 @@ import FSExtra from 'fs-extra'
 import Lookpath from 'lookpath'
 import * as Tempy from 'tempy'
 import ChildProcess from 'child_process'
-import Shared from '../shared.js'
+import shared from '../shared.js'
 
 async function initialise(origin, originText, destination, parameters, alert) {
 
+    const operation = 'blend-pdf-text-pages'
     const options = {
+        useCache: false,
         method: 'qpdf',
         ...parameters
     }
+    const cache = await shared.caching(operation)
+    const waypoint = shared.waypointWith(alert, cache)
 
     async function blenderQPDF() {
         const isInstalled = await Lookpath.lookpath('qpdf')
@@ -44,16 +48,16 @@ async function initialise(origin, originText, destination, parameters, alert) {
         const method = await methods[options.method]()
         const run = async item => {
             if (item.skip) return item
-            alert({
-                operation: 'blend-pdf-text-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'blending...'
             })
             try {
                 await method(item)
-                alert({
-                    operation: 'blend-pdf-text-pages',
+                waypoint({
+                    operation,
                     input: item.input,
                     output: item.output,
                     message: 'done'
@@ -61,8 +65,8 @@ async function initialise(origin, originText, destination, parameters, alert) {
                 return item
             }
             catch (e) {
-                alert({
-                    operation: 'blend-pdf-text-pages',
+                waypoint({
+                    operation,
                     input: item.input,
                     output: item.output,
                     message: e.message,
@@ -75,10 +79,23 @@ async function initialise(origin, originText, destination, parameters, alert) {
     }
 
     async function check(item) {
+        if (options.useCache) {
+            const cached = cache.existing.get(item.input)
+            if (cached) {
+                waypoint({
+                    operation,
+                    input: item.input,
+                    output: item.output,
+                    cached: true,
+                    ...cached
+                })
+                return { ...item, skip: true }
+            }
+        }
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
-            alert({
-                operation: 'blend-pdf-text-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'output exists'
@@ -88,8 +105,8 @@ async function initialise(origin, originText, destination, parameters, alert) {
         const buffer = Buffer.alloc(5)
         await FSExtra.read(await FSExtra.open(item.input, 'r'), buffer, 0, 5)
         if (buffer.toString() != '%PDF-') {
-            alert({
-                operation: 'blend-pdf-text-pages',
+            waypoint({
+                operation,
                 input: item.input,
                 output: item.output,
                 message: 'not a valid PDF file',
@@ -103,7 +120,7 @@ async function initialise(origin, originText, destination, parameters, alert) {
     async function setup() {
         await FSExtra.ensureDir(destination)
         const blend = await blender()
-        const source = () => Shared.source(origin, destination).unorder(entry => {
+        const source = () => shared.source(origin, destination).unorder(entry => {
             return {
                 ...entry,
                 inputText: `${originText}/${entry.name}`,

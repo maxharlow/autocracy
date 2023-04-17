@@ -33,7 +33,8 @@ async function initialise(origin, alternative, destination, alert) {
                 operation: 'symlink-missing',
                 input: item.input,
                 output: item.output,
-                message: 'not a valid PDF file'
+                message: 'not a valid PDF file',
+                importance: 'error'
             })
             return { ...item, skip: true } // not a valid PDF file
         }

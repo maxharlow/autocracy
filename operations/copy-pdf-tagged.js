@@ -68,7 +68,8 @@ async function initialise(origin, destination, parameters, alert) {
                 operation: 'copy-pdf-tagged',
                 input: item.input,
                 output: item.output,
-                message: 'not a valid PDF file'
+                message: 'not a valid PDF file',
+                importance: 'error'
             })
             return { ...item, skip: true } // not a valid PDF file
         }

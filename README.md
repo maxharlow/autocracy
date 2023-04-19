@@ -32,3 +32,9 @@ In either case, the origin should be a directory of PDF files. The destination s
 By default, Autocracy will first attempt to extract any tagged-text from within the PDF files. If tagged-text is found, it is used instead of (much slower) OCR. To disable this use the `--force-ocr` flag. The `--preprocess` flag will do some processing to attempt to improve OCR quality. The language expected in the documents defaults to English, but can be specified by passing the `--language` flag one of the language codes [from this page](https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html).
 
 A directory named `.autocracy-cache` will be created to contain intermediate files. These will be used on subsequent invocations of Autocracy. You will want to delete this directory after you finish.
+
+
+See also
+--------
+
+* [OCR my PDF](https://github.com/ocrmypdf/OCRmyPDF)

@@ -142,7 +142,7 @@ async function initialise(origin, destination, parameters, alert) {
         const extractor = await extract()
         const source = () => shared.source(origin, destination)
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(check).unorder(extractor)
+        const run = source().unorder(check).unorder(extractor)
         return { run, length }
     }
 

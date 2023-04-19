@@ -80,8 +80,8 @@ async function initialise(origin, alternative, destination, parameters, alert) {
                 alternative: `${alternative}/${entry.name}` // symlink won't be created if this exists
             }
         })
-        const run = () => source().unorder(check).unorder(symlink)
         const length = () => source().reduce(a => a + 1, 0)
+        const run = source().unorder(check).unorder(symlink)
         return { run, length }
     }
 

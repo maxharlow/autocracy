@@ -9,14 +9,14 @@ function runProcess(segments, progress) {
         await previous
         const operation = await segment.setup()
         const total = await operation.length()
-        await operation.run().each(progress(`${segment.name}...`.padEnd(longest + 3, ' '), total)).whenEnd()
+        await operation.run.each(progress(`${segment.name}...`.padEnd(longest + 3, ' '), total)).whenEnd()
         if (operation.shutdown) await operation.shutdown()
     }, Promise.resolve())
 }
 
 async function runOperation(operation, progress) {
     const total = await operation.length()
-    await operation.run().each(progress('Working...', total)).whenEnd()
+    await operation.run.each(progress('Working...', total)).whenEnd()
     if (operation.shutdown) await operation.shutdown()
 }
 

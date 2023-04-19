@@ -172,7 +172,7 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         const combine = await combiner()
         const source = () => shared.source(origin, destination, { originInput: originPages })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(check).unorder(listing).unorder(combine)
+        const run = source().unorder(check).unorder(listing).unorder(combine)
         return { run, length }
     }
 

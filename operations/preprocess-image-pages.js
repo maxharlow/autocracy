@@ -89,7 +89,7 @@ async function initialise(origin, destination, parameters, alert) {
         await FSExtra.ensureDir(destination)
         const source = () => shared.source(origin, destination, { paged: true })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(check).unorder(preprocess)
+        const run = source().unorder(check).unorder(preprocess)
         return { run, length }
     }
 

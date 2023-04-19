@@ -200,7 +200,7 @@ async function initialise(origin, destination, parameters, alert) {
             }
         })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(check).setOptions({ maxParallel: OS.cpus().length }).unorder(convert.run)
+        const run = source().unorder(check).setOptions({ maxParallel: OS.cpus().length }).unorder(convert.run)
         return {
             run,
             length,

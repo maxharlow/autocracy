@@ -164,7 +164,7 @@ async function initialise(origin, destination, parameters, alert) {
         const converter = await convert()
         const source = () => shared.source(origin, destination)
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(check).unorder(converter)
+        const run = source().unorder(check).unorder(converter)
         return { run, length }
     }
 

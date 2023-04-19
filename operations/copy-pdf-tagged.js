@@ -97,7 +97,7 @@ async function initialise(origin, destination, parameters, alert) {
         await FSExtra.ensureDir(destination)
         const source = () => shared.source(origin, destination)
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => source().unorder(check).unorder(copyMaybe)
+        const run = source().unorder(check).unorder(copyMaybe)
         return { run, length }
     }
 

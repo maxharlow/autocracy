@@ -126,8 +126,8 @@ async function initialise(origin, originText, destination, parameters, alert) {
                 inputText: `${originText}/${entry.name}`,
             }
         })
-        const run = () => source().unorder(check).unorder(blend)
         const length = () => source().reduce(a => a + 1, 0)
+        const run = source().unorder(check).unorder(blend)
         return { run, length }
     }
 

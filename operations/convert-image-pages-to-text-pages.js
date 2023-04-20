@@ -220,18 +220,6 @@ async function initialise(origin, destination, parameters, alert) {
     }
 
     async function setup() {
-        if (options.useCache) {
-            const cached = cache.existing.get(item.input)
-            if (cached) {
-                waypoint({
-                    operation,
-                    input: item.input,
-                    output: item.output,
-                     ...cached
-                })
-                return { ...item, skip: true }
-            }
-        }
         await FSExtra.ensureDir(destination)
         const convert = await converter()
         const source = () => shared.source(origin, destination, { paged: true }).unorder(entry => {

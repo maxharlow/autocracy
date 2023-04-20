@@ -8,7 +8,7 @@ import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 import shared from '../shared.js'
 
-async function initialise(origin, destination, parameters, alert) {
+async function initialise(origin, destination, parameters, progress, alert) {
 
     const operation = 'convert-image-pages-to-pdf-text-pages'
     const options = {
@@ -201,11 +201,7 @@ async function initialise(origin, destination, parameters, alert) {
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = source().unorder(check).setOptions({ maxParallel: OS.cpus().length }).unorder(convert.run)
-        return {
-            run,
-            length,
-            shutdown: convert.shutdown
-        }
+        return shared.runOperation({ run, length, shutdown: convert.shutdown }, progress)
     }
 
     return setup()

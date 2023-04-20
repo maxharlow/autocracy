@@ -3,23 +3,6 @@ import Yargs from 'yargs'
 import autocracy from './autocracy.js'
 import cliRenderer from './cli-renderer.js'
 
-function runProcess(segments, progress) {
-    const longest = Math.max(...segments.map(segment => segment.name.length))
-    return segments.reduce(async (previous, segment) => {
-        await previous
-        const operation = await segment.setup()
-        const total = await operation.length()
-        await operation.run.each(progress(`${segment.name}...`.padEnd(longest + 3, ' '), total)).whenEnd()
-        if (operation.shutdown) await operation.shutdown()
-    }, Promise.resolve())
-}
-
-async function runOperation(operation, progress) {
-    const total = await operation.length()
-    await operation.run.each(progress('Working...', total)).whenEnd()
-    if (operation.shutdown) await operation.shutdown()
-}
-
 async function setup() {
     const instructions = Yargs(Process.argv.slice(2))
         .usage('Usage: autocracy <command>')
@@ -172,8 +155,7 @@ async function setup() {
                 convertPDFToImagePagesWith: convertPdfToImagePagesWith,
                 convertImagePagesToTextPagesWith
             }
-            const segments = autocracy.getText(origin, destination, parameters, alert)
-            await runProcess(segments, progress)
+            await autocracy.getText(origin, destination, parameters, progress, alert)
         }
         else if (command === 'make-searchable') {
             const {
@@ -199,8 +181,7 @@ async function setup() {
                 combinePDFPagesWith: combinePdfPagesWith,
                 blendPDFTextPagesWith: blendPdfTextPagesWith
            }
-            const segments = autocracy.makeSearchable(origin, destination, parameters, alert)
-            await runProcess(segments, progress)
+            await autocracy.makeSearchable(origin, destination, parameters, progress, alert)
         }
         else if (command === 'extract-pdf-to-text') {
             const {
@@ -212,8 +193,7 @@ async function setup() {
                 useCache,
                 method
             }
-            const operation = await autocracy.operations.extractPDFToText(origin, destination, parameters, alert)
-            await runOperation(operation, progress)
+            await autocracy.operations.extractPDFToText(origin, destination, parameters, progress, alert)
         }
         else if (command === 'copy-pdf-tagged') {
             const {
@@ -225,8 +205,7 @@ async function setup() {
                 useCache,
                 method
             }
-            const operation = await autocracy.operations.copyPDFTagged(origin, destination, parameters, alert)
-            await runOperation(operation, progress)
+            await autocracy.operations.copyPDFTagged(origin, destination, parameters, progress, alert)
         }
         else if (command === 'symlink-missing') {
             const {
@@ -236,8 +215,7 @@ async function setup() {
             const parameters = {
                 useCache
             }
-            const operation = await autocracy.operations.symlinkMissing(origin, alternative, destination, parameters, alert)
-            await runOperation(operation, progress)
+            await autocracy.operations.symlinkMissing(origin, alternative, destination, parameters, progress, alert)
         }
         else if (command === 'convert-pdf-to-image-pages') {
             const {
@@ -251,8 +229,7 @@ async function setup() {
                 method,
                 density
             }
-            const operation = await autocracy.operations.convertPDFToImagePages(origin, destination, parameters, alert)
-            await runOperation(operation, progress)
+            await autocracy.operations.convertPDFToImagePages(origin, destination, parameters, progress, alert)
         }
         else if (command === 'preprocess-image-pages') {
             const {
@@ -262,8 +239,7 @@ async function setup() {
             const parameters = {
                 useCache
             }
-            const operation = await autocracy.operations.preprocessImagePages(origin, destination, parameters, alert)
-            await runOperation(operation, progress)
+            await autocracy.operations.preprocessImagePages(origin, destination, parameters, progress, alert)
         }
         else if (command === 'convert-image-pages-to-text-pages') {
             const {
@@ -283,8 +259,7 @@ async function setup() {
                 timeout,
                 awsRegion
             }
-            const operation = await autocracy.operations.convertImagePagesToTextPages(origin, destination, parameters, alert)
-            await runOperation(operation, progress)
+            await autocracy.operations.convertImagePagesToTextPages(origin, destination, parameters, progress, alert)
         }
         else if (command === 'convert-image-pages-to-pdf-text-pages') {
             const {
@@ -302,8 +277,7 @@ async function setup() {
                 density,
                 timeout
             }
-            const operation = await autocracy.operations.convertImagePagesToPDFTextPages(origin, destination, parameters, alert)
-            await runOperation(operation, progress)
+            await autocracy.operations.convertImagePagesToPDFTextPages(origin, destination, parameters, progress, alert)
         }
         else if (command === 'combine-text-pages') {
             const {
@@ -313,8 +287,7 @@ async function setup() {
             const parameters = {
                 useCache
             }
-            const operation = await autocracy.operations.combineTextPages(origin, originPages, destination, parameters, alert)
-            await runOperation(operation, progress)
+            await autocracy.operations.combineTextPages(origin, originPages, destination, parameters, progress, alert)
         }
         else if (command === 'combine-pdf-pages') {
             const {
@@ -326,8 +299,7 @@ async function setup() {
                 useCache,
                 method
             }
-            const operation = await autocracy.operations.combinePDFPages(origin, originPages, destination, parameters, alert)
-            await runOperation(operation, progress)
+            await autocracy.operations.combinePDFPages(origin, originPages, destination, parameters, progress, alert)
         }
         else if (command === 'blend-pdf-text-pages') {
             const {
@@ -339,8 +311,7 @@ async function setup() {
                 useCache,
                 method
             }
-            const operation = await autocracy.operations.blendPDFTextPages(origin, originText, destination, parameters, alert)
-            await runOperation(operation, progress)
+            await autocracy.operations.blendPDFTextPages(origin, originText, destination, parameters, progress, alert)
         }
         else {
             throw new Error(`${command}: unknown command`)

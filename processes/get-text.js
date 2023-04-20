@@ -1,6 +1,7 @@
 import autocracy from './../autocracy.js'
+import shared from './../shared.js'
 
-function initialise(origin, destination, parameters, alert) {
+function initialise(origin, destination, parameters, progress, alert) {
     const options = {
         useCache: false,
         forceOCR: false,
@@ -26,6 +27,7 @@ function initialise(origin, destination, parameters, alert) {
                     useCache: options.useCache,
                     method: options.extractPDFToTextWith
                 },
+                progress,
                 alert
             )
         },
@@ -38,6 +40,7 @@ function initialise(origin, destination, parameters, alert) {
                 {
                     useCache: options.useCache
                 },
+                progress,
                 alert
             )
         },
@@ -51,6 +54,7 @@ function initialise(origin, destination, parameters, alert) {
                     method: options.convertPDFToImagePagesWith,
                     density
                 },
+                progress,
                 alert
             )
         },
@@ -62,6 +66,7 @@ function initialise(origin, destination, parameters, alert) {
                 {
                     useCache: options.useCache
                 },
+                progress,
                 alert
             )
         },
@@ -77,6 +82,7 @@ function initialise(origin, destination, parameters, alert) {
                     timeout: 5 * 60,
                     density
                 },
+                progress,
                 alert
             )
         },
@@ -90,11 +96,12 @@ function initialise(origin, destination, parameters, alert) {
                     useCache: options.useCache,
                     originPrior: cacheImagePages
                 },
+                progress,
                 alert
             )
         }
     ]
-    return segments.filter(x => x)
+    return shared.runProcess(segments.filter(x => x), progress)
 }
 
 export default initialise

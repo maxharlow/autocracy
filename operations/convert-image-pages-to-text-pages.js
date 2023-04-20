@@ -7,7 +7,7 @@ import Tesseract from 'tesseract.js'
 import * as AWSTextract from '@aws-sdk/client-textract'
 import shared from '../shared.js'
 
-async function initialise(origin, destination, parameters, alert) {
+async function initialise(origin, destination, parameters, progress, alert) {
 
     const operation = 'convert-image-pages-to-text-pages'
     const options = {
@@ -229,16 +229,9 @@ async function initialise(origin, destination, parameters, alert) {
             }
         })
         const length = () => source().reduce(a => a + 1, 0)
-        const run = () => {
-            // AWS Textract DetectDocumentText transactions per second quotas: https://docs.aws.amazon.com/general/latest/gr/textract.html#limits_textract
-            if (options.method === 'aws-textract') return source().unorder(check).setOptions({ maxParallel: 10 }).unorder(convert.run)
-            return source().unorder(check).unorder(convert.run)
-        }
-        return {
-            run,
-            length,
-            shutdown: convert.shutdown
-        }
+        // AWS Textract DetectDocumentText transactions per second quotas: https://docs.aws.amazon.com/general/latest/gr/textract.html#limits_textract
+        const run = source().unorder(check).setOptions(options.method === 'aws-textract' ? { maxParallel: 10 } : {}).unorder(convert.run)
+        return shared.runOperation({ run, length, shutdown: convert.shutdown }, progress)
     }
 
     return setup()

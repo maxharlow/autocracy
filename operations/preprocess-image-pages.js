@@ -3,7 +3,7 @@ import * as Tempy from 'tempy'
 import Sharp from 'sharp'
 import shared from '../shared.js'
 
-async function initialise(origin, destination, parameters, alert) {
+async function initialise(origin, destination, parameters, progress, alert) {
 
     const operation = 'preprocess-image-pages'
     const options = {
@@ -90,7 +90,7 @@ async function initialise(origin, destination, parameters, alert) {
         const source = () => shared.source(origin, destination, { paged: true })
         const length = () => source().reduce(a => a + 1, 0)
         const run = source().unorder(check).unorder(preprocess)
-        return { run, length }
+        return shared.runOperation({ run, length }, progress)
     }
 
     return setup()

@@ -3,6 +3,23 @@ import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import BetterSqlite3 from 'better-sqlite3'
 
+function runProcess(segments, progress) {
+    const longest = Math.max(...segments.map(segment => segment.name.length))
+    return segments.reduce(async (previous, segment) => {
+        await previous
+        const operation = await segment.setup()
+        const total = await operation.length()
+        await operation.run.each(progress(`${segment.name}...`.padEnd(longest + 3, ' '), total)).whenEnd()
+        if (operation.shutdown) await operation.shutdown()
+    }, Promise.resolve())
+}
+
+async function runOperation(operation, progress) {
+    const total = await operation.length()
+    await operation.run.each(progress('Working...', total)).whenEnd()
+    if (operation.shutdown) await operation.shutdown()
+}
+
 async function* walk(pathRoot) {
     const filenames = await FSExtra.readdir(pathRoot)
     for (const filename of filenames) {
@@ -48,4 +65,10 @@ function waypointWith(alert, cache) {
     }
 }
 
-export default { source, caching, waypointWith }
+export default {
+    runProcess,
+    runOperation,
+    source,
+    caching,
+    waypointWith
+}

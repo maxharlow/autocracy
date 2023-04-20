@@ -128,7 +128,7 @@ async function initialise(origin, originText, destination, parameters, alert) {
         })
         const length = () => source().reduce(a => a + 1, 0)
         const run = source().unorder(check).unorder(blend)
-        return { run, length }
+        return shared.runOperation({ run, length }, progress)
     }
 
     return setup()

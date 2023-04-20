@@ -4,7 +4,7 @@ import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import shared from '../shared.js'
 
-async function initialise(origin, destination, parameters, alert) {
+async function initialise(origin, destination, parameters, progress, alert) {
 
     const operation = 'copy-pdf-tagged'
     const options = {
@@ -98,7 +98,7 @@ async function initialise(origin, destination, parameters, alert) {
         const source = () => shared.source(origin, destination)
         const length = () => source().reduce(a => a + 1, 0)
         const run = source().unorder(check).unorder(copyMaybe)
-        return { run, length }
+        return shared.runOperation({ run, length }, progress)
     }
 
     return setup()

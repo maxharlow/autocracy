@@ -6,7 +6,7 @@ import * as Tempy from 'tempy'
 import ChildProcess from 'child_process'
 import shared from '../shared.js'
 
-async function initialise(origin, originPages, destination, parameters, alert) {
+async function initialise(input, output, parameters, tick, alert) {
 
     const operation = 'combine-pdf-pages'
     const options = {
@@ -23,15 +23,15 @@ async function initialise(origin, originPages, destination, parameters, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const output = Tempy.temporaryFile()
+            const result = Tempy.temporaryFile()
             const pagesList = item.pages.map(page => `"${escaped(item.input)}/${page}"`).join(' ')
-            const command = `mutool merge -o ${output} ${pagesList}`
+            const command = `mutool merge -o ${result} ${pagesList}`
             try {
                 await execute(command)
-                await FSExtra.move(output, item.output)
+                await FSExtra.move(result, item.output)
             }
             catch (e) {
-                await FSExtra.remove(output)
+                await FSExtra.remove(result)
                 const message = e.message.trim()
                     .split('\n')
                     .filter(line => !line.match(/Command failed:|warning:|aborting process/))
@@ -167,13 +167,19 @@ async function initialise(origin, originPages, destination, parameters, alert) {
     }
 
     async function setup() {
-        console.log(origin,originPages,destination)
-        await FSExtra.ensureDir(destination)
+        await FSExtra.ensureDir(output)
         const combine = await combiner()
-        const source = () => shared.source(origin, destination, { originInput: originPages })
-        const length = () => source().reduce(a => a + 1, 0)
-        const run = source().unorder(check).unorder(listing).unorder(combine)
-        return shared.runOperation({ run, length }, progress)
+        const run = async item => {
+            const itemLocated = {
+                name: item.name,
+                input: `${input}/${item.name}`,
+                output: `${output}/${item.name}`
+            }
+            await combine(await listing(await check(itemLocated)))
+            tick()
+            return item
+        }
+        return { run }
     }
 
     return setup()

@@ -20,106 +20,119 @@ function initialise(origin, destination, parameters, progress, alert) {
     const cachePDFTextPages = '.autocracy-cache/pdf-text-pages'
     const cachePDFText = '.autocracy-cache/pdf-text'
     const density = 300
-    const segments = [
+    const stages = [
         !options.forceOCR && {
-            name: 'Copying already-tagged PDFs',
-            setup: () => autocracy.operations.copyPDFTagged(
-                origin,
-                destination,
-                {
-                    useCache: options.useCache,
-                    method: options.copyPDFTaggedWith
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Copying already-tagged PDFs...'.padEnd(45, ' '), length)
+                return autocracy.operations.copyPDFTagged(
+                    origin,
+                    destination,
+                    {
+                        useCache: options.useCache,
+                        method: options.copyPDFTaggedWith
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         !options.forceOCR && {
-            name: 'Symlinking untagged PDFs',
-            setup: () => autocracy.operations.symlinkMissing(
-                origin,
-                destination,
-                cacheUntagged,
-                {
-                    useCache: options.useCache
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Symlinking untagged PDFs...'.padEnd(45, ' '), length)
+                return autocracy.operations.symlinkMissing(
+                    origin,
+                    destination,
+                    cacheUntagged,
+                    {
+                        useCache: options.useCache
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         {
-            name: options.forceOCR ? 'Converting PDFs to image pages' : 'Converting untagged PDFs to image pages',
-            setup: () => autocracy.operations.convertPDFToImagePages(
-                options.forceOCR ? origin : cacheUntagged,
-                cacheImagePages,
-                {
-                    useCache: options.useCache,
-                    method: options.convertPDFToImagePagesWith,
-                    density
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress((options.forceOCR ? 'Converting PDFs to image pages...' : 'Converting untagged PDFs to image pages...').padEnd(45, ' '), length)
+                return autocracy.operations.convertPDFToImagePages(
+                    options.forceOCR ? origin : cacheUntagged,
+                    cacheImagePages,
+                    {
+                        useCache: options.useCache,
+                        method: options.convertPDFToImagePagesWith,
+                        density
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         options.preprocess && {
-            name: 'Preprocessing image pages',
-            setup: () => autocracy.operations.preprocessImagePages(
-                cacheImagePages,
-                cacheImagePagesPreprocessed,
-                {
-                    useCache: options.useCache
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Preprocessing image pages...'.padEnd(45, ' '), length)
+                return autocracy.operations.preprocessImagePages(
+                    cacheImagePages,
+                    cacheImagePagesPreprocessed,
+                    {
+                        useCache: options.useCache
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         {
-            name: 'Converting image pages to PDF text pages',
-            setup: () => autocracy.operations.convertImagePagesToPDFTextPages(
-                options.preprocess ? cacheImagePagesPreprocessed : cacheImagePages,
-                cachePDFTextPages,
-                {
-                    useCache: options.useCache,
-                    method: options.convertImagePagesToPDFTextPagesWith,
-                    language: options.language,
-                    timeout: 5 * 60,
-                    density
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Converting image pages to PDF text pages...'.padEnd(45, ' '), length)
+                return autocracy.operations.convertImagePagesToPDFTextPages(
+                    options.preprocess ? cacheImagePagesPreprocessed : cacheImagePages,
+                    cachePDFTextPages,
+                    {
+                        useCache: options.useCache,
+                        method: options.convertImagePagesToPDFTextPagesWith,
+                        language: options.language,
+                        timeout: 5 * 60,
+                        density
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         {
-            name: 'Combining PDF text pages',
-            setup: () => autocracy.operations.combinePDFPages(
-                origin,
-                cachePDFTextPages,
-                cachePDFText,
-                {
-                    useCache: options.useCache,
-                    originPrior: cacheImagePages,
-                    method: options.combinePDFPagesWith
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Combining PDF text pages...'.padEnd(45, ' '), length)
+                return autocracy.operations.combinePDFPages(
+                    cachePDFTextPages,
+                    cachePDFText,
+                    {
+                        useCache: options.useCache,
+                        originPrior: cacheImagePages,
+                        method: options.combinePDFPagesWith
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         {
-            name: 'Blending PDF text pages with original pages',
-            setup: () => autocracy.operations.blendPDFTextPages(
-                origin,
-                cachePDFText,
-                destination,
-                {
-                    useCache: options.useCache,
-                    method: options.blendPDFTextPagesWith
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Blending untagged PDFs with text-only PDFs...'.padEnd(45, ' '), length)
+                return autocracy.operations.blendPDFTextPages(
+                    origin,
+                    cachePDFText,
+                    destination,
+                    {
+                        useCache: options.useCache,
+                        method: options.blendPDFTextPagesWith
+                    },
+                    tick,
+                    alert
+                )
+            }
         }
     ]
-    return shared.runProcess(segments.filter(x => x), progress)
+    return shared.pipeline(origin, destination, stages.filter(x => x))
 }
 
 export default initialise

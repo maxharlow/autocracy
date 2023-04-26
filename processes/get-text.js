@@ -17,91 +17,102 @@ function initialise(origin, destination, parameters, progress, alert) {
     const cacheImagePagesPreprocessed = '.autocracy-cache/image-pages-preprocessed'
     const cacheTextPages = '.autocracy-cache/text-pages'
     const density = 300
-    const segments = [
+    const stages = [
         !options.forceOCR && {
-            name: 'Extracting PDFs to full texts',
-            setup: () => autocracy.operations.extractPDFToText(
-                origin,
-                destination,
-                {
-                    useCache: options.useCache,
-                    method: options.extractPDFToTextWith
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Extracting PDFs to full texts...'.padEnd(45, ' '), length)
+                return autocracy.operations.extractPDFToText(
+                    origin,
+                    destination,
+                    {
+                        useCache: options.useCache,
+                        method: options.extractPDFToTextWith
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         !options.forceOCR && {
-            name: 'Symlinking untagged PDFs',
-            setup: () => autocracy.operations.symlinkMissing(
-                origin,
-                destination,
-                cacheUntagged,
-                {
-                    useCache: options.useCache
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Symlinking untagged PDFs...'.padEnd(45, ' '), length)
+                return autocracy.operations.symlinkMissing(
+                    origin,
+                    destination,
+                    cacheUntagged,
+                    {
+                        useCache: options.useCache
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         {
-            name: options.forceOCR ? 'Converting PDFs to image pages' : 'Converting untagged PDFs to image pages',
-            setup: () => autocracy.operations.convertPDFToImagePages(
-                options.forceOCR ? origin : cacheUntagged,
-                cacheImagePages,
-                {
-                    useCache: options.useCache,
-                    method: options.convertPDFToImagePagesWith,
-                    density
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress((options.forceOCR ? 'Converting PDFs to image pages...' : 'Converting untagged PDFs to image pages...').padEnd(45, ' '), length)
+                return autocracy.operations.convertPDFToImagePages(
+                    options.forceOCR ? origin : cacheUntagged,
+                    cacheImagePages,
+                    {
+                        useCache: options.useCache,
+                        method: options.convertPDFToImagePagesWith,
+                        density
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         options.preprocess && {
-            name: 'Preprocessing image pages',
-            setup: () => autocracy.operations.preprocessImagePages(
-                cacheImagePages,
-                cacheImagePagesPreprocessed,
-                {
-                    useCache: options.useCache
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Preprocessing image pages...'.padEnd(45, ' '), length)
+                return autocracy.operations.preprocessImagePages(
+                    cacheImagePages,
+                    cacheImagePagesPreprocessed,
+                    {
+                        useCache: options.useCache
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         {
-            name: 'Converting image pages to text pages',
-            setup: () => autocracy.operations.convertImagePagesToTextPages(
-                options.preprocess ? cacheImagePagesPreprocessed : cacheImagePages,
-                cacheTextPages,
-                {
-                    useCache: options.useCache,
-                    method: options.convertImagePagesToTextPagesWith,
-                    language: options.language,
-                    timeout: 5 * 60,
-                    density
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Converting image pages to text pages...'.padEnd(45, ' '), length)
+                return autocracy.operations.convertImagePagesToTextPages(
+                    options.preprocess ? cacheImagePagesPreprocessed : cacheImagePages,
+                    cacheTextPages,
+                    {
+                        useCache: options.useCache,
+                        method: options.convertImagePagesToTextPagesWith,
+                        language: options.language,
+                        timeout: 5 * 60,
+                        density
+                    },
+                    tick,
+                    alert
+                )
+            }
         },
         {
-            name: 'Combining text pages into full texts',
-            setup: () => autocracy.operations.combineTextPages(
-                origin,
-                cacheTextPages,
-                destination,
-                {
-                    useCache: options.useCache,
-                    originPrior: cacheImagePages
-                },
-                progress,
-                alert
-            )
+            setup: length => {
+                const tick = progress('Combining text pages into full texts...'.padEnd(45, ' '), length)
+                return autocracy.operations.combineTextPages(
+                    cacheTextPages,
+                    destination,
+                    {
+                        useCache: options.useCache,
+                        originPrior: cacheImagePages
+                    },
+                    tick,
+                    alert
+                )
+            }
         }
     ]
-    return shared.runProcess(segments.filter(x => x), progress)
+    return shared.pipeline(origin, destination, stages.filter(x => x))
 }
 
 export default initialise

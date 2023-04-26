@@ -2,7 +2,7 @@ import Path from 'path'
 import FSExtra from 'fs-extra'
 import shared from '../shared.js'
 
-async function initialise(origin, originPages, destination, parameters, alert) {
+async function initialise(input, output, parameters, tick, alert) {
 
     const operation = 'combine-text-pages'
     const options = {
@@ -12,7 +12,7 @@ async function initialise(origin, originPages, destination, parameters, alert) {
     const cache = await shared.caching(operation)
     const waypoint = shared.waypointWith(alert, cache)
 
-    async function read(item) {
+    async function combine(item) {
         if (item.skip) return item
         const outputExists = await FSExtra.exists(item.output)
         if (outputExists) {
@@ -119,11 +119,18 @@ async function initialise(origin, originPages, destination, parameters, alert) {
     }
 
     async function setup() {
-        await FSExtra.ensureDir(destination)
-        const source = () => shared.source(origin, destination, { originInput: originPages })
-        const length = () => source().reduce(a => a + 1, 0)
-        const run = source().unorder(check).unorder(listing).unorder(read)
-        return shared.runOperation({ run, length }, progress)
+        await FSExtra.ensureDir(output)
+        const run = async item => {
+            const itemLocated = {
+                name: item.name,
+                input: `${input}/${item.name}`,
+                output: `${output}/${item.name}`
+            }
+            await combine(await listing(await check(itemLocated)))
+            tick()
+            return item
+        }
+        return { run }
     }
 
     return setup()

@@ -4,7 +4,7 @@ import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import shared from '../shared.js'
 
-async function initialise(origin, destination, parameters, progress, alert) {
+async function initialise(input, output, parameters, tick, alert) {
 
     const operation = 'copy-pdf-tagged'
     const options = {
@@ -94,11 +94,18 @@ async function initialise(origin, destination, parameters, progress, alert) {
     }
 
     async function setup() {
-        await FSExtra.ensureDir(destination)
-        const source = () => shared.source(origin, destination)
-        const length = () => source().reduce(a => a + 1, 0)
-        const run = source().unorder(check).unorder(copyMaybe)
-        return shared.runOperation({ run, length }, progress)
+        await FSExtra.ensureDir(output)
+        const run = async item => {
+            const itemLocated = {
+                name: item.name,
+                input: `${input}/${item.name}`,
+                output: `${output}/${item.name}`
+            }
+            await copyMaybe(await check(itemLocated))
+            tick()
+            return item
+        }
+        return { run }
     }
 
     return setup()

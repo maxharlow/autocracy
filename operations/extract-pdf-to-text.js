@@ -4,7 +4,7 @@ import Lookpath from 'lookpath'
 import ChildProcess from 'child_process'
 import shared from '../shared.js'
 
-async function initialise(origin, destination, parameters, progress, alert) {
+async function initialise(input, output, parameters, tick, alert) {
 
     const operation = 'extract-pdf-to-text'
     const options = {
@@ -138,12 +138,19 @@ async function initialise(origin, destination, parameters, progress, alert) {
     }
 
     async function setup() {
-        await FSExtra.ensureDir(destination)
+        await FSExtra.ensureDir(output)
         const extractor = await extract()
-        const source = () => shared.source(origin, destination)
-        const length = () => source().reduce(a => a + 1, 0)
-        const run = source().unorder(check).unorder(extractor)
-        return shared.runOperation({ run, length }, progress)
+        const run = async item => {
+            const itemLocated = {
+                name: item.name,
+                input: `${input}/${item.name}`,
+                output: `${output}/${item.name}`
+            }
+            await extractor(await check(itemLocated))
+            tick()
+            return item
+        }
+        return { run }
     }
 
     return setup()

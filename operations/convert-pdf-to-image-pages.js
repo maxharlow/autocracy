@@ -6,7 +6,7 @@ import ChildProcess from 'child_process'
 import MuPDF from 'mupdf-js'
 import shared from '../shared.js'
 
-async function initialise(origin, destination, parameters, progress, alert) {
+async function initialise(input, output, parameters, tick, alert) {
 
     const operation = 'convert-pdf-to-image-pages'
     const options = {
@@ -24,14 +24,14 @@ async function initialise(origin, destination, parameters, progress, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const output = Tempy.temporaryDirectory()
-            const command = `mutool draw -r ${options.density} -o "${output}/page-%d.png" "${escaped(item.input)}"`
+            const result = Tempy.temporaryDirectory()
+            const command = `mutool draw -r ${options.density} -o "${result}/page-%d.png" "${escaped(item.input)}"`
             try {
                 await execute(command)
-                await FSExtra.move(output, `${item.output}`)
+                await FSExtra.move(result, `${item.output}`)
             }
             catch (e) {
-                await FSExtra.remove(output)
+                await FSExtra.remove(result)
                 const message = e.message.trim()
                     .split('\n')
                     .filter(line => !line.match(/Command failed:|warning:|aborting process/))
@@ -53,7 +53,7 @@ async function initialise(origin, destination, parameters, progress, alert) {
             const documentData = await FSExtra.readFile(item.input)
             const document = processor.load(documentData)
             const pages = processor.countPages(document)
-            const output = Tempy.temporaryDirectory()
+            const result = Tempy.temporaryDirectory()
             const pagesOutput = Array.from({ length: pages }).map(async (_, index) => {
                 const page = index + 1
                 waypoint({
@@ -64,10 +64,10 @@ async function initialise(origin, destination, parameters, progress, alert) {
                 })
                 const imageData = processor.drawPageAsPNG(document, page, options.density)
                 const image = Buffer.from(imageData.split(',').pop(), 'base64')
-                return FSExtra.writeFile(`${output}/page-${page}.png`, image)
+                return FSExtra.writeFile(`${result}/page-${page}.png`, image)
             })
             await Promise.all(pagesOutput)
-            await FSExtra.move(output, item.output)
+            await FSExtra.move(result, item.output)
         }
         return run
     }
@@ -160,12 +160,19 @@ async function initialise(origin, destination, parameters, progress, alert) {
     }
 
     async function setup() {
-        await FSExtra.ensureDir(destination)
+        await FSExtra.ensureDir(output)
         const converter = await convert()
-        const source = () => shared.source(origin, destination)
-        const length = () => source().reduce(a => a + 1, 0)
-        const run = source().unorder(check).unorder(converter)
-        return shared.runOperation({ run, length }, progress)
+        const run = async item => {
+            const itemLocated = {
+                name: item.name,
+                input: `${input}/${item.name}`,
+                output: `${output}/${item.name}`
+            }
+            await converter(await check(itemLocated))
+            tick()
+            return item
+        }
+        return { run }
     }
 
     return setup()

@@ -5,7 +5,7 @@ import * as Tempy from 'tempy'
 import ChildProcess from 'child_process'
 import shared from '../shared.js'
 
-async function initialise(origin, originText, destination, parameters, alert) {
+async function initialise(input, inputText, output, parameters, tick, alert) {
 
     const operation = 'blend-pdf-text-pages'
     const options = {
@@ -22,14 +22,14 @@ async function initialise(origin, originText, destination, parameters, alert) {
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
         const run = async item => {
-            const output = Tempy.temporaryFile()
-            const command = `qpdf "${escaped(item.inputText)}" --overlay "${escaped(item.input)}" -- ${output}`
+            const result = Tempy.temporaryFile()
+            const command = `qpdf "${escaped(item.inputText)}" --overlay "${escaped(item.input)}" -- ${result}`
             try {
                 await execute(command)
-                await FSExtra.move(output, item.output)
+                await FSExtra.move(result, item.output)
             }
             catch (e) {
-                await FSExtra.remove(output)
+                await FSExtra.remove(result)
                 const message = e.message.trim()
                     .split('\n')
                     .find(line => line.match('qpdf:'))
@@ -118,17 +118,20 @@ async function initialise(origin, originText, destination, parameters, alert) {
     }
 
     async function setup() {
-        await FSExtra.ensureDir(destination)
+        await FSExtra.ensureDir(output)
         const blend = await blender()
-        const source = () => shared.source(origin, destination).unorder(entry => {
-            return {
-                ...entry,
-                inputText: `${originText}/${entry.name}`,
+        const run = async item => {
+            const itemLocated = {
+                name: item.name,
+                input: `${input}/${item.name}`,
+                inputText: `${inputText}/${item.name}`,
+                output: `${output}/${item.name}`
             }
-        })
-        const length = () => source().reduce(a => a + 1, 0)
-        const run = source().unorder(check).unorder(blend)
-        return shared.runOperation({ run, length }, progress)
+            await blend(await check(itemLocated))
+            tick()
+            return item
+        }
+        return { run }
     }
 
     return setup()

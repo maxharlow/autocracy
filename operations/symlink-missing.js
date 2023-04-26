@@ -1,7 +1,7 @@
 import FSExtra from 'fs-extra'
 import shared from '../shared.js'
 
-async function initialise(origin, alternative, destination, parameters, alert) {
+async function initialise(input, alternative, output, parameters, tick, alert) {
 
     const operation = 'symlink-missing'
     const options = {
@@ -73,16 +73,19 @@ async function initialise(origin, alternative, destination, parameters, alert) {
     }
 
     async function setup() {
-        await FSExtra.ensureDir(destination)
-        const source = () => shared.source(origin, destination).unorder(entry => {
-            return {
-                ...entry,
-                alternative: `${alternative}/${entry.name}` // symlink won't be created if this exists
+        await FSExtra.ensureDir(output)
+        const run = async item => {
+            const itemLocated = {
+                name: item.name,
+                input: `${input}/${item.name}`,
+                alternative: `${alternative}/${item.name}`,
+                output: `${output}/${item.name}`
             }
-        })
-        const length = () => source().reduce(a => a + 1, 0)
-        const run = source().unorder(check).unorder(symlink)
-        return shared.runOperation({ run, length }, progress)
+            await symlink(await check(itemLocated))
+            tick()
+            return item
+        }
+        return { run }
     }
 
     return setup()

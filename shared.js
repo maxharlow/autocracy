@@ -3,23 +3,6 @@ import FSExtra from 'fs-extra'
 import Scramjet from 'scramjet'
 import BetterSqlite3 from 'better-sqlite3'
 
-function runProcess(segments, progress) {
-    const longest = Math.max(...segments.map(segment => segment.name.length))
-    return segments.reduce(async (previous, segment) => {
-        await previous
-        const operation = await segment.setup()
-        const total = await operation.length()
-        await operation.run.each(progress(`${segment.name}...`.padEnd(longest + 3, ' '), total)).whenEnd()
-        if (operation.shutdown) await operation.shutdown()
-    }, Promise.resolve())
-}
-
-async function runOperation(operation, progress) {
-    const total = await operation.length()
-    await operation.run.each(progress('Working...', total)).whenEnd()
-    if (operation.shutdown) await operation.shutdown()
-}
-
 async function* walk(pathRoot) {
     const filenames = await FSExtra.readdir(pathRoot)
     for (const filename of filenames) {
@@ -29,17 +12,26 @@ async function* walk(pathRoot) {
     }
 }
 
-function source(origin, destination, { paged, originInput } = {}) {
+function source(origin) {
     const originResolved = Path.resolve(origin)
     const listing = walk(origin)
     return Scramjet.DataStream.from(listing).map(entry => {
         const name = entry.replace(`${originResolved}/`, '')
-        return {
-            name: paged ? Path.dirname(entry).replace(`${originResolved}/`, '') : name, // if origin is page-files, 'name' should refer to the original document name
-            input: `${originInput || origin}/${name}`, // originInput used when the origin we are listing is not the actual location of the files we want to use
-            output: `${destination}/${name}`
-        }
+        return { name }
     })
+}
+
+async function pipeline(origin, destination, stages) {
+    const length = await source(origin).reduce(a => a + 1, 0)
+    const stream = source(origin)
+    const [everything, shutdown] = await stages.reduce(async (previous, stage) => {
+        const [last, shutdowns] = await previous
+        await last
+        const operation = await stage.setup(length)
+        return [last.unorder(operation.run), operation.shutdown ? shutdowns.concat(operation.shutdown) : shutdowns]
+    }, [stream, []])
+    await everything.run()
+    await Promise.all(shutdown)
 }
 
 async function caching(operation) {
@@ -66,8 +58,7 @@ function waypointWith(alert, cache) {
 }
 
 export default {
-    runProcess,
-    runOperation,
+    pipeline,
     source,
     caching,
     waypointWith

@@ -3,12 +3,13 @@ import Util from 'util'
 import FSExtra from 'fs-extra'
 import Lookpath from 'lookpath'
 import * as Tempy from 'tempy'
+import Scramjet from 'scramjet'
 import PDF from 'pdfjs'
 import ChildProcess from 'child_process'
 import Tesseract from 'tesseract.js'
 import shared from '../shared.js'
 
-async function initialise(origin, destination, parameters, progress, alert) {
+async function initialise(input, output, parameters, tick, alert) {
 
     const operation = 'convert-image-pages-to-pdf-text-pages'
     const options = {
@@ -39,9 +40,9 @@ async function initialise(origin, destination, parameters, progress, alert) {
         if (!isInstalled) throw new Error('Tesseract not found!')
         const escaped = path => path.replaceAll('"', '\\"')
         const execute = Util.promisify(ChildProcess.exec)
-        const run = async (item, controller) => {
-            const output = Tempy.temporaryFile()
-            const command = `OMP_THREAD_LIMIT=1 tesseract -c textonly_pdf=1,tessedit_do_invert=0 -l ${options.language} --dpi ${options.density} --psm 12 "${escaped(item.input)}" ${output} pdf`
+        const run = async (page, controller) => {
+            const result = Tempy.temporaryFile()
+            const command = `OMP_THREAD_LIMIT=1 tesseract -c textonly_pdf=1,tessedit_do_invert=0 -l ${options.language} --dpi ${options.density} --psm 12 "${escaped(page.input)}" ${result} pdf`
             try {
                 await execute(command, {
                     signal: controller.signal,
@@ -49,10 +50,10 @@ async function initialise(origin, destination, parameters, progress, alert) {
                 })
                 if (controller.aborted) return
                 controller.abort()
-                await FSExtra.move(`${output}.pdf`, item.output)
+                await FSExtra.move(`${result}.pdf`, page.output)
             }
             catch (e) {
-                await FSExtra.remove(output)
+                await FSExtra.remove(result)
                 const message = e.message.trim().split('\n').pop().toLowerCase()
                 throw new Error(message)
             }
@@ -77,8 +78,8 @@ async function initialise(origin, destination, parameters, progress, alert) {
             })
             scheduler.addWorker(worker)
         }, Promise.resolve())
-        const run = async (item, controller) => {
-            const output = await scheduler.addJob('recognize', item.input, {}, {
+        const run = async (page, controller) => {
+            const result = await scheduler.addJob('recognize', page.input, {}, {
                 text: false,
                 blocks: false,
                 hocr: false,
@@ -87,7 +88,7 @@ async function initialise(origin, destination, parameters, progress, alert) {
             })
             if (controller.aborted) return
             controller.abort()
-            await FSExtra.writeFile(item.output, Buffer.from(output.data.pdf))
+            await FSExtra.writeFile(page.output, Buffer.from(result.data.pdf))
         }
         return {
             run,
@@ -101,13 +102,13 @@ async function initialise(origin, destination, parameters, progress, alert) {
             tesseract: converterTesseract
         }
         const method = await methods[options.method]()
-        const run = async item => {
-            if (item.skip) return item
-            await FSExtra.ensureDir(`${destination}/${item.name}`)
+        const run = async page => {
+            if (page.skip) return page
+            await FSExtra.ensureDir(page.outputDirectory)
             waypoint({
                 operation,
-                input: item.input,
-                output: item.output,
+                input: page.input,
+                output: page.output,
                 message: 'converting...'
             })
             try {
@@ -115,36 +116,36 @@ async function initialise(origin, destination, parameters, progress, alert) {
                     const document = new PDF.Document()
                     document.cell()
                     const data = await document.asBuffer()
-                    await FSExtra.writeFile(item.output, data) // write a blank PDF
+                    await FSExtra.writeFile(page.output, data) // write a blank PDF
                 })
-                await method.run(item, controller)
+                await method.run(page, controller)
                 waypoint({
                     operation,
-                    input: item.input,
-                    output: item.output,
+                    input: page.input,
+                    output: page.output,
                     message: 'done'
                 })
-                return item
+                return page
             }
             catch (e) {
                 if (e.message === 'the operation was aborted') {
                     waypoint({
                         operation,
-                        input: item.input,
-                        output: item.output,
+                        input: page.input,
+                        output: page.output,
                         message: `timed out after ${options.timeout}s`,
                         importance: 'warning'
                     })
-                    return item // timeouts aren't errors
+                    return page // timeouts aren't errors
                 }
                 waypoint({
                     operation,
-                    input: item.input,
-                    output: item.output,
+                    input: page.input,
+                    output: page.output,
                     message: e.message,
                     importance: 'error'
                 })
-                return { ...item, skip: true } // execution failed with message
+                return { ...page, skip: true } // execution failed with message
             }
         }
         return {
@@ -153,7 +154,44 @@ async function initialise(origin, destination, parameters, progress, alert) {
         }
     }
 
-    async function check(item) {
+    async function check(page) {
+        if (options.useCache) {
+            const cached = cache.existing.get(page.input)
+            if (cached) {
+                waypoint({
+                    operation,
+                    input: page.input,
+                    output: page.output,
+                    cached: true,
+                    ...cached
+                })
+                return { ...page, skip: true }
+            }
+        }
+        const outputExists = await FSExtra.exists(page.output)
+        if (outputExists) {
+            waypoint({
+                operation,
+                input: page.input,
+                output: page.output,
+                message: 'output exists'
+            })
+            return { ...page, skip: true } // we can use cached output
+        }
+        const inputExists = await FSExtra.exists(page.input)
+        if (!inputExists) {
+            waypoint({
+                operation,
+                input: page.input,
+                output: page.output,
+                message: 'no input'
+            })
+            return { ...page, skip: true } // exists in initial-origin but not origin
+        }
+        return page
+    }
+
+    async function paged(item) {
         if (options.useCache) {
             const cached = cache.existing.get(item.input)
             if (cached) {
@@ -164,44 +202,40 @@ async function initialise(origin, destination, parameters, progress, alert) {
                     cached: true,
                     ...cached
                 })
-                return { ...item, skip: true }
+                return []
             }
         }
-        const outputExists = await FSExtra.exists(item.output)
-        if (outputExists) {
-            waypoint({
-                operation,
-                input: item.input,
-                output: item.output,
-                message: 'output exists'
-            })
-            return { ...item, skip: true } // we can use cached output
-        }
-        const inputExists = await FSExtra.exists(item.input)
+        const inputExists = await FSExtra.exists(`${input}/${item.name}`)
         if (!inputExists) {
             waypoint({
                 operation,
-                input: item.input,
-                output: item.output,
-                message: 'no input'
+                input: `${input}/${item.name}`,
+                output: `${output}/${item.name}`,
+                message: 'no input directory'
             })
-            return { ...item, skip: true } // exists in initial-origin but not origin
+            return []
         }
-        return item
+        const pages = await FSExtra.readdir(`${input}/${item.name}`)
+        return pages.map(page => {
+            return {
+                name: `${item.name}/${page}`,
+                input: `${input}/${item.name}/${page}`,
+                output: `${output}/${item.name}/${page.replace(/png$/, 'pdf')}`,
+                outputDirectory: `${output}/${item.name}`
+            }
+        })
     }
 
     async function setup() {
-        await FSExtra.ensureDir(destination)
+        await FSExtra.ensureDir(output)
         const convert = await converter()
-        const source = () => shared.source(origin, destination, { paged: true }).unorder(entry => {
-            return {
-                ...entry,
-                output: entry.output.replace(/png$/, 'pdf')
-            }
-        })
-        const length = () => source().reduce(a => a + 1, 0)
-        const run = source().unorder(check).setOptions({ maxParallel: OS.cpus().length }).unorder(convert.run)
-        return shared.runOperation({ run, length, shutdown: convert.shutdown }, progress)
+        const run = async item => {
+            const pages = await paged(item)
+            await Scramjet.DataStream.from(pages).map(check).map(convert.run).run()
+            tick()
+            return item
+        }
+        return { run, shutdown: convert.shutdown }
     }
 
     return setup()

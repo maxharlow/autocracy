@@ -53,6 +53,7 @@ async function initialise(input, output, parameters, tick, alert) {
                 await FSExtra.move(`${result}.pdf`, page.output)
             }
             catch (e) {
+                controller.abort()
                 await FSExtra.remove(result)
                 const message = e.message.trim().split('\n').pop().toLowerCase()
                 throw new Error(message)

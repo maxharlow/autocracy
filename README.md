@@ -11,6 +11,11 @@ Installing
 
 Alternatively, don't install it and just prepend the below commands with `npx`.
 
+Completions for Zsh will also be installed if a directory exists:
+
+    $ mkdir -p /usr/local/share/zsh/site-functions
+    $ chown -R $(whoami) /usr/local/share/zsh/site-functions
+
 You will also need to install tools that Autocracy relies on to operate, [Tesseract](https://github.com/tesseract-ocr/tesseract), [MuPDF](https://github.com/ArtifexSoftware/mupdf), and [QPDF](https://github.com/qpdf/qpdf). On a Mac with Homebrew these can be installed with `brew install tesseract mupdf qpdf`. With Apt you will need to run `apt install tesseract-ocr mupdf-tools qpdf`.
 
 If not using Homebrew check your Tesseract installation includes the fast training data for your desired languages, which can otherwise be downloaded [from here](https://github.com/tesseract-ocr/tessdata_fast).

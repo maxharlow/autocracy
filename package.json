@@ -10,12 +10,12 @@
         "url": "https://github.com/maxharlow/autocracy.git"
     },
     "dependencies": {
-        "@aws-sdk/client-textract": "3.511.x",
-        "better-sqlite3": "9.4.x",
-        "chalk": "5.3.x",
-        "fs-extra": "11.2.x",
+        "@aws-sdk/client-textract": "3.749.x",
+        "better-sqlite3": "11.8.x",
+        "chalk": "5.4.x",
+        "fs-extra": "11.3.x",
         "lookpath": "1.2.x",
-        "luxon": "3.4.x",
+        "luxon": "3.5.x",
         "mupdf-js": "1.1.x",
         "pdfjs": "2.5.x",
         "scramjet": "4.36.x",

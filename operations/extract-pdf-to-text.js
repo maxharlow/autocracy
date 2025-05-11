@@ -122,8 +122,10 @@ async function initialise(input, output, parameters, tick, alert) {
             })
             return { ...item, skip: true } // exists in initial-origin but not origin
         }
+        const descriptor = await FSExtra.open(item.input, 'r')
         const buffer = Buffer.alloc(5)
-        await FSExtra.read(await FSExtra.open(item.input, 'r'), buffer, 0, 5)
+        await FSExtra.read(descriptor, buffer, 0, 5)
+        await FSExtra.close(descriptor)
         if (buffer.toString() != '%PDF-') {
             waypoint({
                 operation,

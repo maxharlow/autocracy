@@ -100,8 +100,7 @@ async function setup() {
         await finalise('complete')
     }
     catch (e) {
-        await finalise('error')
-        console.error(instructions.argv.verbose ? e.stack : e.message)
+        await finalise('error', e)
         Process.exit(1)
     }
 }

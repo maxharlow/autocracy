@@ -1,6 +1,6 @@
 import Process from 'process'
 import Events from 'events'
-import Chalk from 'chalk'
+import * as Chalk from 'chalk'
 import * as Luxon from 'luxon'
 import SimpleWCSWidth from 'simple-wcswidth'
 
@@ -39,6 +39,7 @@ function formatDuration(milliseconds, prefix = '', suffix = '') {
 function formatFinalisation(mode) {
     if (mode === 'complete') return [formatDuration(new Date() - beginning, 'Completed in ', '!') || 'Completed!']
     else if (mode === 'interrupt') return ['Interrupted!']
+    else if (mode === 'error') return ['Failed!']
     else return []
 }
 
@@ -85,19 +86,19 @@ function draw(linesDrawn) {
             const messageTruncated = truncate(width, details.message.replaceAll('\n', ' '))
             const [inputTruncated, outputTruncated] = details.input && details.output ? truncate(width - messageTruncated.length, details.input.replaceAll('\n', '\\n'), details.output.replaceAll('\n', '\\n')) : []
             const elements = [
-                Chalk.blue(details.operation),
+                Chalk.chalkStderr.blue(details.operation),
                 inputTruncated ? ' ' : null,
                 inputTruncated ? inputTruncated : null,
-                inputTruncated ? Chalk.blue(' → ') : null,
+                inputTruncated ? Chalk.chalkStderr.blue(' → ') : null,
                 outputTruncated ? outputTruncated : null,
                 ' ',
-                details.importance === 'error' ? Chalk.red.bold(messageTruncated)
-                    : details.importance === 'warning' ? Chalk.magenta.bold(messageTruncated)
-                    : details.message.endsWith('...') ? Chalk.yellow(messageTruncated)
-                    : details.message.toLowerCase().startsWith('done') ? Chalk.green(messageTruncated)
-                    : Chalk.magenta(messageTruncated),
+                details.importance === 'error' ? Chalk.chalkStderr.red.bold(messageTruncated)
+                    : details.importance === 'warning' ? Chalk.chalkStderr.magenta.bold(messageTruncated)
+                    : details.message.endsWith('...') ? Chalk.chalkStderr.yellow(messageTruncated)
+                    : details.message.toLowerCase().startsWith('done') ? Chalk.chalkStderr.green(messageTruncated)
+                    : Chalk.chalkStderr.magenta(messageTruncated),
                 details.cached ? ' ' : null,
-                details.cached ? Chalk.grey('ⓒ') : null
+                details.cached ? Chalk.chalkStderr.grey('ⓒ') : null
             ]
             return elements.filter(x => x).join('')
         }),
@@ -156,7 +157,11 @@ function setup(verbose) {
         alerts[key] = details
         isDirty = true
     }
-    const finalise = mode => {
+    const finalise = (mode, e) => {
+        if (e) {
+            alert({ message: `Fatal error: ${e.message}`, importance: 'error' })
+            if (verbose) e.stack.split('\n').slice(1).forEach((line, i) => alert({ message: line, importance: 'error' }))
+        }
         if (!doRedisplay && !finalisation) formatFinalisation(mode).map(text => console.error(text))
         finalisation = mode
         if (doRedisplay) return new Promise(resolve => events.on('finished', resolve))
@@ -166,7 +171,7 @@ function setup(verbose) {
     Process.stdin.setEncoding('utf8')
     Process.stdin.on('data', async data => {
         if (data === '\u0003') {
-            console.error(Chalk.bgRedBright.white('Stopping...'))
+            console.error(Chalk.chalkStderr.bgRedBright.white('Stopping...'))
             if (doRedisplay) Process.stderr.moveCursor(0, -1)
             await finalise('interrupt')
             Process.exit(0)

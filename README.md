@@ -1,7 +1,7 @@
 Autocracy
 =========
 
-Absolute power to automate OCR.
+Absolute power to orchestrate OCR.
 
 
 Installing
